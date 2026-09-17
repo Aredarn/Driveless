@@ -48,8 +48,9 @@ The constants marked `OPEN` in `src/game/tuning.ts` are product decisions that
 have not been made yet — the damage hit count among them. They are placeholders
 chosen to be playable, not answers. Also undecided and deliberately not built:
 seeding and run sharing, whether a personal best survives a reload (it is
-session-memory only today), audio, and whether traffic appears on the track and
-rally stages.
+session-memory only today), audio, whether traffic appears on the track and
+rally stages, and the numeric grip model separating them (the `mu` and
+`traffic` fields in `src/game/stages.ts`, marked OPEN there).
 
 Product truth lives in [PRODUCT.md](PRODUCT.md); the design direction for the
 game screen is recorded in `.impeccable/surfaces/index-html.md`.

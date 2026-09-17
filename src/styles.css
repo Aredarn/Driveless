@@ -5,12 +5,12 @@
 /* The road book: chinagraph on waterproof stock. Ink, stock, one signal red,
    three tab-card colours. Nothing glows. */
 :root {
-  --ink: #1a1b18;
-  --ink-soft: #4d4f48;
-  --ink-faint: #8a8b81;
-  --rule: #b4b1a4;
-  --stock: #dedbd2;
-  --stock-shade: #d3cfc3;
+  --ink: #171a1a;
+  --ink-soft: #464a4a;
+  --ink-faint: #5b6060;
+  --rule: #a9afaf;
+  --stock: #dde0df;
+  --stock-shade: #ced3d3;
   --red: #b52f26;
   --red-bright: #c9382d;
   --road: #2a567f;
@@ -68,7 +68,8 @@ body {
   position: relative;
   display: grid;
   grid-template-rows: auto 1fr auto;
-  background: var(--stock);
+  background-color: var(--stock);
+  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='t'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='140' height='140' filter='url(%23t)' opacity='0.055'/></svg>");
   padding: calc(var(--step) * 3) calc(var(--step) * 4) calc(var(--step) * 2.5) calc(var(--step) * 3);
   min-height: 0;
   z-index: 2;
@@ -292,7 +293,8 @@ body {
   display: grid;
   align-content: center;
   gap: calc(var(--step) * 2);
-  background: var(--stock);
+  background-color: var(--stock);
+  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='t'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='140' height='140' filter='url(%23t)' opacity='0.055'/></svg>");
   padding-block: calc(var(--step) * 2);
 }
 
@@ -357,7 +359,7 @@ body {
   font-size: 0.8125rem;
   font-weight: 400;
   letter-spacing: 0.02em;
-  color: #e8e6de;
+  color: #e8eae9;
 }
 
 /* ---- foot ---------------------------------------------------------- */
@@ -410,7 +412,7 @@ body {
   position: relative;
   min-width: 0;
   min-height: 0;
-  background: #c6c2b4;
+  background: #bfc4c3;
 }
 
 #plate {

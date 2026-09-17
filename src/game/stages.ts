@@ -1,12 +1,20 @@
 import type { StageId } from './types';
 
+/**
+ * Two fields here carry decisions the surface brief records as UNRESOLVED,
+ * not as answers: `mu` (the numeric grip model separating the stages) and
+ * `traffic` (whether traffic belongs on track and rally at all). They are
+ * playable placeholders, marked OPEN the same way src/game/tuning.ts marks
+ * its own, and they are the product owner's to settle.
+ */
 export interface Stage {
   id: StageId;
   name: string;
   gloss: string;
   /** Tab card colour. */
   tint: string;
-  /** Coefficient of friction the surface offers. */
+  /** OPEN: coefficient of friction the surface offers. The numeric grip
+   *  model separating the stages has not been decided. */
   mu: number;
   /** Top speed in m/s before the distance ramp and damage are applied. */
   topSpeed: number;
@@ -14,6 +22,7 @@ export interface Stage {
   halfWidth: number;
   /** Share of segments written as straights before pressure tightens them. */
   straightBias: number;
+  /** OPEN: whether this stage carries traffic at all. */
   traffic: boolean;
   edge: 'verge' | 'kerb' | 'stake';
   surface: string;

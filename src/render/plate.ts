@@ -2,11 +2,11 @@ import type { Run } from '../game/run';
 import type { RoadPoint } from '../game/types';
 import { CAR_LENGTH, CAR_WIDTH } from '../game/tuning';
 
-const INK = '#1a1b18';
-const GROUND = '#c6c2b4';
-const ROAD_FILL = '#e6e3d9';
-const ROAD_FILL_LOOSE = '#d8d3c4';
-const STOCK = '#dedbd2';
+const INK = '#171a1a';
+const GROUND = '#bfc4c3';
+const ROAD_FILL = '#e7eae9';
+const ROAD_FILL_LOOSE = '#d4d8d7';
+const STOCK = '#dde0df';
 const RED = '#b52f26';
 
 /**
@@ -108,7 +108,7 @@ export class Plate {
     const scale = (bottom - top) / span;
 
     ctx.save();
-    ctx.strokeStyle = 'rgba(26, 27, 24, 0.5)';
+    ctx.strokeStyle = 'rgba(23, 26, 26, 0.5)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(axis + 0.5, top);
@@ -126,7 +126,7 @@ export class Plate {
       ctx.lineTo(axis + 0.5 + (major ? 11 : 6), y);
       ctx.stroke();
       if (major && m > 0) {
-        ctx.fillStyle = 'rgba(26, 27, 24, 0.72)';
+        ctx.fillStyle = 'rgba(23, 26, 26, 0.72)';
         ctx.fillText(String(m), axis - 6, y);
       }
     }
@@ -144,7 +144,7 @@ export class Plate {
       const metres = veh.s - run.car.s;
       if (metres < 0 || metres > span) continue;
       const y = Math.round(bottom - metres * scale);
-      ctx.fillStyle = veh.dir < 0 ? INK : 'rgba(26, 27, 24, 0.42)';
+      ctx.fillStyle = veh.dir < 0 ? INK : 'rgba(23, 26, 26, 0.42)';
       ctx.fillRect(axis - 21, y - 2, 9, 4);
     }
 
@@ -188,7 +188,7 @@ export class Plate {
           case 0:
           case 1: {
             // Hatched field.
-            ctx.strokeStyle = 'rgba(26, 27, 24, 0.13)';
+            ctx.strokeStyle = 'rgba(23, 26, 26, 0.13)';
             ctx.lineWidth = 0.3;
             ctx.save();
             ctx.translate(x, y);
@@ -207,7 +207,7 @@ export class Plate {
           case 2:
           case 3: {
             // Scrub stipple.
-            ctx.fillStyle = 'rgba(26, 27, 24, 0.19)';
+            ctx.fillStyle = 'rgba(23, 26, 26, 0.19)';
             for (let i = 0; i < 7; i++) {
               const px = x + Math.cos(angle * (i + 1) * 2.3) * (2 + i * 0.9);
               const py = y + Math.sin(angle * (i + 1) * 1.7) * (2 + i * 0.9);
@@ -219,7 +219,7 @@ export class Plate {
           }
           default: {
             // Contour stroke.
-            ctx.strokeStyle = 'rgba(26, 27, 24, 0.1)';
+            ctx.strokeStyle = 'rgba(23, 26, 26, 0.1)';
             ctx.lineWidth = 0.34;
             ctx.beginPath();
             ctx.arc(x, y, 9 + (seed % 7), angle, angle + 1.9);
@@ -237,7 +237,7 @@ export class Plate {
     const inset = 14;
     const arm = 13;
     ctx.save();
-    ctx.strokeStyle = 'rgba(26, 27, 24, 0.5)';
+    ctx.strokeStyle = 'rgba(23, 26, 26, 0.5)';
     ctx.lineWidth = 1;
     for (const [x, sx] of [
       [inset, 1],
@@ -271,7 +271,7 @@ export class Plate {
       // Gravel, stippled the way a printed plate would screen it.
       ctx.save();
       ctx.clip();
-      ctx.fillStyle = 'rgba(26, 27, 24, 0.16)';
+      ctx.fillStyle = 'rgba(23, 26, 26, 0.16)';
       for (let i = 0; i < span.length; i += 2) {
         const p = span[i]!;
         const n = rightNormal(p.h);
@@ -334,7 +334,7 @@ export class Plate {
     }
 
     // Verge: a soft ruled shoulder outside the casing.
-    ctx.strokeStyle = 'rgba(26, 27, 24, 0.24)';
+    ctx.strokeStyle = 'rgba(23, 26, 26, 0.24)';
     ctx.lineWidth = 0.16;
     for (const side of [1, -1]) {
       ctx.beginPath();
@@ -384,7 +384,7 @@ export class Plate {
 
   private drawCentreLine(span: RoadPoint[]): void {
     const { ctx } = this;
-    ctx.strokeStyle = 'rgba(26, 27, 24, 0.55)';
+    ctx.strokeStyle = 'rgba(23, 26, 26, 0.55)';
     ctx.lineWidth = 0.22;
     ctx.setLineDash([3, 6]);
     ctx.beginPath();
@@ -400,7 +400,7 @@ export class Plate {
   /** Distance ticks off the casing, the way a stage plate is chained. */
   private drawTicks(span: RoadPoint[]): void {
     const { ctx } = this;
-    ctx.strokeStyle = 'rgba(26, 27, 24, 0.45)';
+    ctx.strokeStyle = 'rgba(23, 26, 26, 0.45)';
     for (const p of span) {
       const metres = Math.round(p.s);
       if (metres % 50 !== 0) continue;
@@ -431,7 +431,7 @@ export class Plate {
       ctx.beginPath();
       roundRect(ctx, -veh.length / 2, -veh.width / 2, veh.length, veh.width, 0.5);
       // Oncoming reads solid; overtaking traffic reads hollow.
-      ctx.fillStyle = veh.dir < 0 ? INK : '#b6b2a3';
+      ctx.fillStyle = veh.dir < 0 ? INK : '#b0b5b4';
       ctx.fill();
       ctx.lineWidth = 0.2 / Math.max(0.6, ppm / 3);
       ctx.strokeStyle = INK;
@@ -458,13 +458,13 @@ export class Plate {
     ctx.translate(x, y);
     ctx.rotate(heading + slip);
 
-    ctx.shadowColor = 'rgba(26, 27, 24, 0.34)';
+    ctx.shadowColor = 'rgba(23, 26, 26, 0.34)';
     ctx.shadowBlur = 0.9;
     ctx.shadowOffsetY = 0.35 * ppm * 0.12;
 
     ctx.beginPath();
     roundRect(ctx, -CAR_LENGTH / 2, -CAR_WIDTH / 2, CAR_LENGTH, CAR_WIDTH, 0.55);
-    ctx.fillStyle = stopped ? '#8d8a7e' : RED;
+    ctx.fillStyle = stopped ? '#878c8b' : RED;
     ctx.fill();
     ctx.shadowColor = 'transparent';
     ctx.shadowBlur = 0;
@@ -474,7 +474,7 @@ export class Plate {
     ctx.stroke();
 
     // Windscreen slot, so the mark reads as a car and shows which way it points.
-    ctx.fillStyle = offRoad ? '#efece2' : STOCK;
+    ctx.fillStyle = offRoad ? '#eef1f0' : STOCK;
     ctx.fillRect(CAR_LENGTH * 0.06, -CAR_WIDTH / 2 + 0.3, 0.75, CAR_WIDTH - 0.6);
     ctx.restore();
   }
@@ -538,7 +538,7 @@ function makeGrain(ctx: CanvasRenderingContext2D): CanvasPattern | null {
     const v = 150 + Math.random() * 105;
     image.data[i] = v;
     image.data[i + 1] = v;
-    image.data[i + 2] = v - 6;
+    image.data[i + 2] = v + 5;
     image.data[i + 3] = 20;
   }
   tctx.putImageData(image, 0, 0);
