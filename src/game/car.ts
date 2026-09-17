@@ -24,10 +24,10 @@ import {
  * The car lives in the road's own frame: distance along the centreline,
  * lateral offset from it, and heading relative to the tangent.
  *
- * Two controls: steer, and the handbrake. The throttle is not a ramp — the
- * car reads the road ahead and brakes for what it cannot hold, so speed rises
- * and falls with the shape of the stage. That is what lets the road contain
- * hairpins and chicanes at all.
+ * Two controls: steer, and brake. Nothing slows the car for you — the
+ * throttle is automatic and pins itself open, and shedding speed for what the
+ * book is calling is the player's job. The generator guarantees the room to
+ * do it exists in front of every corner; using that room is the skill.
  *
  * Heading and travel are separate. `alpha` is the direction the car is
  * actually moving, relative to the road; `slip` is how far the body is turned
@@ -76,6 +76,7 @@ export class Car {
     stage: Stage,
     speedFactor = 1,
     accrueDamage = true,
+    assist = false,
   ): void {
     const point = gen.pointAt(this.s);
     const kappa = gen.curvatureAt(this.s);
@@ -86,18 +87,19 @@ export class Car {
     const flatOut =
       stage.topSpeed * this.speedScale * speedFactor * speedRamp(this.s) * (this.offRoad ? 0.5 : 1);
 
-    // Look far enough ahead to stop for anything inside braking range, and
-    // brake for the tightest thing in it.
-    const zone = (this.v * this.v) / (2 * BRAKE) + 55;
-    const worst = gen.worstCurvatureIn(this.s, this.s + zone);
+    // Assist exists only for the attract loop, which nobody is driving.
     let target = flatOut;
-    if (Math.abs(worst.curvature) > 1e-6) {
-      const hold = Math.sqrt((mu * CORNER_MARGIN * G) / Math.abs(worst.curvature));
-      const runIn = Math.max(0, worst.at - this.s);
-      target = Math.min(target, Math.sqrt(hold * hold + 2 * BRAKE * runIn));
+    if (assist) {
+      const zone = (this.v * this.v) / (2 * BRAKE) + 55;
+      const worst = gen.worstCurvatureIn(this.s, this.s + zone);
+      if (Math.abs(worst.curvature) > 1e-6) {
+        const hold = Math.sqrt((mu * CORNER_MARGIN * G) / Math.abs(worst.curvature));
+        const runIn = Math.max(0, worst.at - this.s);
+        target = Math.min(target, Math.sqrt(hold * hold + 2 * BRAKE * runIn));
+      }
     }
 
-    this.braking = target < this.v - 0.5 || hand;
+    this.braking = hand || (assist && target < this.v - 0.5);
     if (this.v > target) {
       const rate = this.offRoad ? BRAKE * OFFROAD_DRAG : BRAKE;
       this.v = Math.max(target, this.v - rate * dt);

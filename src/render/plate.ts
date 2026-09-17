@@ -144,6 +144,26 @@ export class Plate {
     ctx.closePath();
     ctx.fill();
 
+    // The braking point for what is coming: brake when it reaches the car.
+    const cue = run.phase === 'driving' ? run.brakeCue() : null;
+    if (cue) {
+      const y = Math.round(bottom - Math.max(0, Math.min(span, cue.metres)) * scale);
+      ctx.strokeStyle = RED;
+      ctx.lineWidth = cue.late ? 3 : 2;
+      ctx.beginPath();
+      ctx.moveTo(axis - 15, y);
+      ctx.lineTo(axis + 15, y);
+      ctx.stroke();
+      // Brackets, so it reads as a gate the car is arriving at.
+      ctx.lineWidth = 2;
+      for (const dx of [-15, 15]) {
+        ctx.beginPath();
+        ctx.moveTo(axis + dx, y - 6);
+        ctx.lineTo(axis + dx, y + 6);
+        ctx.stroke();
+      }
+    }
+
     for (const veh of run.traffic.vehicles) {
       const metres = veh.s - run.car.s;
       if (metres < 0 || metres > span) continue;

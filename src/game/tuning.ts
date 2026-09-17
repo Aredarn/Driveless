@@ -39,7 +39,8 @@ export function trafficDensity(distanceM: number): number {
 
 /** How hard the car can shed speed, m/s^2. The generator measures every
  *  corner's run-in against this, so it is the number that decides whether a
- *  hairpin after a fast sweeper is fair or cruel. */
+ *  hairpin after a fast sweeper is fair or cruel. The player's brake is the
+ *  same number: the road is written for the car you are actually driving. */
 export const BRAKE = 11;
 
 /**
@@ -54,8 +55,12 @@ export const CHASE = 30;
 export const HAND_CHASE = 0.8;
 export const HAND_YAW_GAIN = 1.85;
 export const MAX_SLIP = 0.92;
-/** Braking the handbrake itself does, m/s^2. Rear wheels only. */
-export const HAND_BRAKE = 6.5;
+/**
+ * Braking is the player's job. This is deliberately the same number the
+ * generator measures run-ins against: if the car stopped worse than the road
+ * was written for, every corner would be unfair by arithmetic.
+ */
+export const HAND_BRAKE = BRAKE;
 /** How hard a sideways car scrubs its own speed off. */
 export const SLIP_DRAG = 0.55;
 /** Slip past this is a drift: it marks the road and shows in the book. */

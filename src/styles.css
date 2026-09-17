@@ -490,6 +490,25 @@ body {
   color: var(--ink-soft);
 }
 
+/* Shown only while the corner ahead is arriving faster than it can be
+   taken. It stops appearing once the player brakes before it does. */
+.plate__brake {
+  position: absolute;
+  inset-block-start: calc(var(--step) * 10);
+  inset-inline-start: calc(var(--step) * 3.5);
+  margin: 0;
+  font-size: clamp(1.5rem, 2.6vw, 2rem);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--red);
+  pointer-events: none;
+}
+
+.plate__brake[hidden] {
+  display: none;
+}
+
 /* ---- portrait: the book turns sideways ----------------------------- */
 
 @media (max-aspect-ratio: 19/20) {
@@ -649,6 +668,11 @@ body {
 
   .plate__call {
     inset-block-start: calc(var(--step) * 2);
+    inset-inline-start: calc(var(--step) * 2.5);
+  }
+
+  .plate__brake {
+    inset-block-start: calc(var(--step) * 8);
     inset-inline-start: calc(var(--step) * 2.5);
   }
 }

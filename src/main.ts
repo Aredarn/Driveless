@@ -24,6 +24,7 @@ const book = new Book({
   speed: need('#speed'),
   speedLine: need('#speed-line'),
   slip: need('#slip'),
+  brakeCue: need('#brake-cue'),
   best: need('#best'),
   damage: need('#damage'),
   notes: need('#notes'),

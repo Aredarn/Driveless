@@ -12,6 +12,7 @@ export interface BookRefs {
   speed: HTMLElement;
   speedLine: HTMLElement;
   slip: HTMLElement;
+  brakeCue: HTMLElement;
   best: HTMLElement;
   damage: HTMLElement;
   notes: HTMLElement;
@@ -101,6 +102,9 @@ export class Book {
         hits === 0 ? 'Car undamaged' : `${hits} of ${MAX_HITS} hits taken`,
       );
     }
+
+    const cue = run.phase === 'driving' ? run.brakeCue() : null;
+    refs.brakeCue.hidden = !cue?.late || run.car.braking;
 
     this.renderNotes(run);
     this.renderCall(run);
@@ -203,14 +207,14 @@ export class Book {
     const { hint } = this.refs;
     let copy = '';
     if (run.phase === 'choosing') {
-      copy = 'Steer <b>←</b> <b>→</b>. Handbrake <b>↓</b>, or the foot of the plate.';
+      copy = 'Steer <b>←</b> <b>→</b>. Brake <b>↓</b>, or the foot of the plate.';
     } else if (run.phase === 'ended') {
       copy = 'The book stays open at this stage.';
     } else if (run.distance < 700) {
       copy =
         run.distance < 320
-          ? 'The book calls the corner before you can see it.'
-          : 'Pull the handbrake into a tight one and the back comes round.';
+          ? 'Nothing slows the car but you. Brake before the corner, not in it.'
+          : 'Brake straight to scrub speed; brake while turning and the back comes round.';
     }
     if (hint.dataset.copy !== copy) {
       hint.dataset.copy = copy;

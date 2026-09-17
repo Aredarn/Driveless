@@ -4,7 +4,16 @@ import { Rng } from './rng';
 import { STAGES, type Stage } from './stages';
 import { Traffic } from './traffic';
 import type { Segment, StageId } from './types';
-import { HORIZON_SECONDS, MAX_HITS, MIN_HORIZON_M, RUN_IN_M, speedRamp } from './tuning';
+import {
+  BRAKE,
+  CORNER_MARGIN,
+  G,
+  HORIZON_SECONDS,
+  MAX_HITS,
+  MIN_HORIZON_M,
+  RUN_IN_M,
+  speedRamp,
+} from './tuning';
 
 export type Phase = 'choosing' | 'driving' | 'ended';
 
@@ -74,7 +83,16 @@ export class Run {
     const speedFactor = preview ? 0.4 : this.phase === 'ended' ? 0 : 1;
 
     const pulling = hand && this.phase === 'driving';
-    this.car.update(dt, drive, pulling, this.gen, this.stage, speedFactor, this.phase === 'driving');
+    this.car.update(
+      dt,
+      drive,
+      pulling,
+      this.gen,
+      this.stage,
+      speedFactor,
+      this.phase === 'driving',
+      preview,
+    );
     this.gen.ensure(this.car.s, Math.max(MIN_HORIZON_M, this.car.v * HORIZON_SECONDS));
     this.gen.prune(this.car.s);
 
@@ -87,6 +105,26 @@ export class Run {
     const leadIndex = lead ? lead.index : -1;
     this.cornerPassed = this.lastLeadCorner !== -1 && leadIndex !== this.lastLeadCorner;
     this.lastLeadCorner = leadIndex;
+  }
+
+  /**
+   * The braking point for whatever is tightest in range: how far the car can
+   * still run before it has to be slowing, and the speed it needs to arrive
+   * at. Negative metres means the moment has passed and the corner is going
+   * to arrive too fast. Nothing acts on this — it is what the plate draws so
+   * the player can learn where the point is.
+   */
+  brakeCue(): { metres: number; hold: number; late: boolean } | null {
+    const car = this.car;
+    const mu = this.stage.mu * car.gripScale;
+    const zone = (car.v * car.v) / (2 * BRAKE) + 140;
+    const worst = this.gen.worstCurvatureIn(car.s, car.s + zone);
+    if (Math.abs(worst.curvature) < 1e-6) return null;
+    const hold = Math.sqrt((mu * CORNER_MARGIN * G) / Math.abs(worst.curvature));
+    if (car.v <= hold) return null;
+    const needed = (car.v * car.v - hold * hold) / (2 * BRAKE);
+    const metres = worst.at - car.s - needed;
+    return { metres, hold, late: metres <= 0 };
   }
 
   corners(): Segment[] {
