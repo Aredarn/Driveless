@@ -1,3 +1,4 @@
+import type { Car } from '../game/car';
 import type { RoadGenerator } from '../game/generator';
 import type { Run } from '../game/run';
 import type { RoadPoint } from '../game/types';
@@ -88,7 +89,7 @@ export class Plate {
     }
 
     this.drawTraffic(run, ppm);
-    if (car.braking) this.drawBrakeMarks(gen, car.s, car.n);
+    this.drawMarks(gen, car);
     this.drawCar(car.offRoad, carX, carY, heading, car.slip, ppm, run.phase === 'ended');
 
     ctx.restore();
@@ -567,23 +568,33 @@ export class Plate {
     }
   }
 
-  /** Where the car has been shedding speed, laid down like tyre marks. */
-  private drawBrakeMarks(gen: RoadGenerator, s: number, n: number): void {
+  /**
+   * What the tyres left: the line the car actually took while braking or
+   * sideways. The page keeps the evidence for as long as it is in view.
+   */
+  private drawMarks(gen: RoadGenerator, car: Car): void {
     const { ctx } = this;
-    ctx.strokeStyle = 'rgba(23, 26, 26, 0.34)';
-    ctx.lineWidth = 0.32;
-    for (const offset of [-0.62, 0.62]) {
-      ctx.beginPath();
-      for (let back = 0; back <= 16; back += 2) {
-        const p = gen.pointAt(Math.max(0, s - back));
-        const nor = rightNormal(p.h);
-        const lat = n + offset;
-        const x = p.x + nor.x * lat;
-        const y = p.y + nor.y * lat;
-        if (back === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+    const marks = car.marks;
+    if (marks.length < 2) return;
+    ctx.lineCap = 'round';
+    for (let i = 1; i < marks.length; i++) {
+      const a = marks[i - 1]!;
+      const b = marks[i]!;
+      if (b.s - a.s > 9) continue;
+      const age = 1 - (car.s - b.s) / 90;
+      const heavy = a.heavy && b.heavy;
+      ctx.strokeStyle = `rgba(23, 26, 26, ${(heavy ? 0.5 : 0.24) * Math.max(0, age)})`;
+      ctx.lineWidth = heavy ? 0.5 : 0.3;
+      for (const offset of [-0.66, 0.66]) {
+        const pa = gen.pointAt(a.s);
+        const pb = gen.pointAt(b.s);
+        const na = rightNormal(pa.h);
+        const nb = rightNormal(pb.h);
+        ctx.beginPath();
+        ctx.moveTo(pa.x + na.x * (a.n + offset), pa.y + na.y * (a.n + offset));
+        ctx.lineTo(pb.x + nb.x * (b.n + offset), pb.y + nb.y * (b.n + offset));
+        ctx.stroke();
       }
-      ctx.stroke();
     }
   }
 

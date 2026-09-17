@@ -11,6 +11,7 @@ export interface BookRefs {
   distance: HTMLElement;
   speed: HTMLElement;
   speedLine: HTMLElement;
+  slip: HTMLElement;
   best: HTMLElement;
   damage: HTMLElement;
   notes: HTMLElement;
@@ -28,6 +29,7 @@ export class Book {
   private rows = new Map<number, HTMLLIElement>();
   private shownHits = -1;
   private shownSpeed = -1;
+  private shownSlip = -1;
   private token = -1;
 
   constructor(private readonly refs: BookRefs) {
@@ -58,6 +60,7 @@ export class Book {
       this.rows.clear();
       this.shownHits = -1;
       this.shownSpeed = -1;
+      this.shownSlip = -1;
       refs.notes.replaceChildren();
     }
 
@@ -74,6 +77,15 @@ export class Book {
       'book__speed--braking',
       run.car.braking && run.phase === 'driving',
     );
+
+    const slip =
+      run.phase === 'driving' && run.car.drifting
+        ? Math.round(Math.abs((run.car.slip * 180) / Math.PI))
+        : 0;
+    if (slip !== this.shownSlip) {
+      this.shownSlip = slip;
+      refs.slip.textContent = slip > 0 ? `${slip}\u00b0` : '';
+    }
 
     const best = run.bestForStage;
     refs.best.textContent = best > 0 ? `Best ${(best / 1000).toFixed(2)} km` : '';
@@ -191,11 +203,14 @@ export class Book {
     const { hint } = this.refs;
     let copy = '';
     if (run.phase === 'choosing') {
-      copy = 'Steer with <b>←</b> <b>→</b>, or either side of the plate.';
+      copy = 'Steer <b>←</b> <b>→</b>. Handbrake <b>↓</b>, or the foot of the plate.';
     } else if (run.phase === 'ended') {
       copy = 'The book stays open at this stage.';
     } else if (run.distance < 700) {
-      copy = 'The book calls the corner before you can see it.';
+      copy =
+        run.distance < 320
+          ? 'The book calls the corner before you can see it.'
+          : 'Pull the handbrake into a tight one and the back comes round.';
     }
     if (hint.dataset.copy !== copy) {
       hint.dataset.copy = copy;

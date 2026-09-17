@@ -166,6 +166,15 @@ body {
   color: var(--red);
 }
 
+/* Only there while the car is sideways. */
+.book__slip {
+  margin-inline-start: 0.6ch;
+  font-size: 0.78em;
+  font-weight: 700;
+  color: var(--red);
+  font-variant-numeric: tabular-nums;
+}
+
 .book__speed-unit {
   font-size: 0.56em;
   font-weight: 600;
@@ -543,6 +552,15 @@ body {
 
 .book__speed--braking {
   color: var(--red);
+}
+
+/* Only there while the car is sideways. */
+.book__slip {
+  margin-inline-start: 0.6ch;
+  font-size: 0.78em;
+  font-weight: 700;
+  color: var(--red);
+  font-variant-numeric: tabular-nums;
 }
 
 .book__speed-unit {

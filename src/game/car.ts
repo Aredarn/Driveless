@@ -3,8 +3,15 @@ import type { Stage } from './stages';
 import {
   BRAKE,
   CAR_WIDTH,
+  CHASE,
   CORNER_MARGIN,
+  DRIFT_ANGLE,
   G,
+  HAND_BRAKE,
+  HAND_CHASE,
+  HAND_YAW_GAIN,
+  MAX_SLIP,
+  SLIP_DRAG,
   HIT_GRIP_COST,
   HIT_SPEED_COST,
   OFFROAD_DAMAGE_RATE,
@@ -17,12 +24,17 @@ import {
  * The car lives in the road's own frame: distance along the centreline,
  * lateral offset from it, and heading relative to the tangent.
  *
- * Steering is the only control the player has. The throttle is not a ramp:
- * the car reads the road ahead and brakes for what it cannot hold, so speed
- * rises and falls with the shape of the stage. That is what lets the road
- * contain hairpins and chicanes at all — while the car only ever accelerated,
- * every corner had to be gentle enough to take flat, and the stage got
- * blander the faster the run became.
+ * Two controls: steer, and the handbrake. The throttle is not a ramp — the
+ * car reads the road ahead and brakes for what it cannot hold, so speed rises
+ * and falls with the shape of the stage. That is what lets the road contain
+ * hairpins and chicanes at all.
+ *
+ * Heading and travel are separate. `alpha` is the direction the car is
+ * actually moving, relative to the road; `slip` is how far the body is turned
+ * away from that. Grip drags slip back towards zero, so ordinary cornering
+ * carries only a few degrees of it. The handbrake cuts that link: the body
+ * rotates freely while the car keeps going the way it was going, and
+ * releasing snaps the velocity round to meet the heading.
  */
 export class Car {
   s = 0;
@@ -36,10 +48,15 @@ export class Car {
   appliedHits = 0;
   speedScale = 1;
   gripScale = 1;
-  /** Smoothed slide angle, for drawing a car that is sideways when it is. */
+  /** Slip angle: body heading minus direction of travel, radians. */
   slip = 0;
   /** True while shedding speed for something ahead. */
   braking = false;
+  /** True while sideways enough to be marking the road. */
+  drifting = false;
+  /** Where the car has been marking, newest last. */
+  readonly marks: { s: number; n: number; heavy: boolean }[] = [];
+  private lastMarkS = -Infinity;
   offRoad = false;
   lastKnock = 0;
 
@@ -54,6 +71,7 @@ export class Car {
   update(
     dt: number,
     steer: number,
+    hand: boolean,
     gen: RoadGenerator,
     stage: Stage,
     speedFactor = 1,
@@ -79,35 +97,63 @@ export class Car {
       target = Math.min(target, Math.sqrt(hold * hold + 2 * BRAKE * runIn));
     }
 
-    this.braking = target < this.v - 0.5;
+    this.braking = target < this.v - 0.5 || hand;
     if (this.v > target) {
       const rate = this.offRoad ? BRAKE * OFFROAD_DRAG : BRAKE;
       this.v = Math.max(target, this.v - rate * dt);
     } else {
       this.v += (target - this.v) * (1 - Math.exp(-dt / 3.2));
     }
+    if (hand) this.v = Math.max(3, this.v - HAND_BRAKE * dt);
 
     // Everything the car can do laterally comes out of the same grip budget.
-    const maxYaw = (mu * G) / Math.max(this.v, 7);
-    const yaw = steer * maxYaw;
+    // The handbrake spends it differently: more rotation, far less hold.
+    const cornering = (mu * G) / Math.max(this.v, 7);
+    const yaw = steer * cornering * (hand ? HAND_YAW_GAIN : stage.looseness);
+    const chase = cornering * (hand ? HAND_CHASE : CHASE);
 
+    // Slip builds while the body out-turns the tyres and decays as they bite.
+    this.slip += (yaw - chase * this.slip) * dt;
+    this.slip = clamp(this.slip, -MAX_SLIP, MAX_SLIP);
+    this.drifting = Math.abs(this.slip) > DRIFT_ANGLE;
+
+    // Only the tyres turn the car's actual direction of travel.
     const denom = Math.max(0.25, 1 - this.n * kappa);
     const sDot = (this.v * Math.cos(this.alpha)) / denom;
+    // Whatever the body is doing, the tyres cannot turn the car faster than
+    // the surface allows. This is what keeps the generator's promise honest
+    // through a slide.
+    const turn = clamp(chase * this.slip, -cornering, cornering);
+    this.alpha += (turn - kappa * sDot) * dt;
+    this.alpha = clamp(this.alpha, -1.2, 1.2);
 
-    this.alpha += (yaw - kappa * sDot) * dt;
-    this.alpha = clamp(this.alpha, -1.05, 1.05);
+    // A sideways car scrubs its own speed off.
+    if (this.drifting) {
+      this.v = Math.max(3, this.v - SLIP_DRAG * Math.abs(Math.sin(this.slip)) * this.v * dt);
+    }
 
     this.s += sDot * dt;
     this.n += this.v * Math.sin(this.alpha) * dt;
     this.n = clamp(this.n, -point.w - 14, point.w + 14);
 
-    const slipTarget = steer * (1 - Math.min(1, mu)) * Math.min(1, this.v / 26) * 0.55;
-    this.slip += (slipTarget - this.slip) * (1 - Math.exp(-dt / 0.18));
+    this.recordMark();
 
     if (this.offRoad && accrueDamage) this.damage += OFFROAD_DAMAGE_RATE * dt;
     this.settleHits();
 
     this.lastKnock = Math.max(0, this.lastKnock - dt);
+  }
+
+  /** Lays down what the tyres are doing, so the page keeps the evidence. */
+  private recordMark(): void {
+    if (!this.drifting && !this.braking) {
+      this.lastMarkS = -Infinity;
+      return;
+    }
+    if (this.s - this.lastMarkS < 2.4) return;
+    this.lastMarkS = this.s;
+    this.marks.push({ s: this.s, n: this.n, heavy: this.drifting });
+    while (this.marks.length > 0 && this.s - this.marks[0]!.s > 90) this.marks.shift();
   }
 
   /** A struck vehicle: one hit, a shove, and speed scrubbed off. */

@@ -23,6 +23,7 @@ const book = new Book({
   distance: need('#distance'),
   speed: need('#speed'),
   speedLine: need('#speed-line'),
+  slip: need('#slip'),
   best: need('#best'),
   damage: need('#damage'),
   notes: need('#notes'),
@@ -76,7 +77,7 @@ function frame(now: number): void {
   last = now;
 
   input.update(dt);
-  run.update(dt, input.steer);
+  run.update(dt, input.steer, input.brake);
 
   const ended = run.phase === 'ended';
   if (ended && !wasEnded) endedAt = now;

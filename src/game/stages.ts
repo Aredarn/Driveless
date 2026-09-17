@@ -24,6 +24,11 @@ export interface Stage {
   halfWidth: number;
   /** Share of segments written as straights before pressure tightens them. */
   straightBias: number;
+  /** OPEN: how freely the back steps out under power on this surface. Above
+   *  1 the body over-rotates relative to what the tyres deliver, which is
+   *  what makes gravel feel loose; it can never turn the car faster than the
+   *  grip allows, because the velocity turn is capped at the adhesion limit. */
+  looseness: number;
   /** OPEN: whether this stage carries traffic at all. */
   traffic: boolean;
   edge: 'verge' | 'kerb' | 'stake';
@@ -40,6 +45,7 @@ export const STAGES: Record<StageId, Stage> = {
     topSpeed: 62,
     halfWidth: 4.4,
     straightBias: 0.34,
+    looseness: 1,
     traffic: true,
     edge: 'verge',
     surface: 'Tarmac, open to traffic',
@@ -53,6 +59,7 @@ export const STAGES: Record<StageId, Stage> = {
     topSpeed: 68,
     halfWidth: 5.6,
     straightBias: 0.3,
+    looseness: 0.9,
     traffic: false,
     edge: 'kerb',
     surface: 'Sealed circuit, closed',
@@ -66,6 +73,7 @@ export const STAGES: Record<StageId, Stage> = {
     topSpeed: 50,
     halfWidth: 3.1,
     straightBias: 0.22,
+    looseness: 2.4,
     traffic: false,
     edge: 'stake',
     surface: 'Gravel, stage closed',

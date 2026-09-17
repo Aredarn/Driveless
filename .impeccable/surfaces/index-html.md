@@ -9,7 +9,7 @@ Scope: the Driveless game screen — first-run stage pick, the run, the run-end.
 
 Audience and job: a player with five minutes in a browser tab, desktop keyboard or phone in one hand, steering to beat their last distance. Action: steer, survive, retry. Proof: the road is generated ahead of the car and stays passable at the speed already reached.
 
-Constraints: TypeScript + Vite, Canvas 2D, no engine, static output. Frame budget holds on a mobile GPU. Steering-only input.
+Constraints: TypeScript + Vite, Canvas 2D, no engine, static output. Frame budget holds on a mobile GPU. Two controls: steering and a handbrake, on both input surfaces.
 
 ## Direction contract
 

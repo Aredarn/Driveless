@@ -42,6 +42,25 @@ export function trafficDensity(distanceM: number): number {
  *  hairpin after a fast sweeper is fair or cruel. */
 export const BRAKE = 11;
 
+/**
+ * Drift. The car's body heading and the direction it is actually travelling
+ * are separate; the angle between them is slip. Tyres pull the velocity back
+ * towards the heading at CHASE times the cornering rate, which is why normal
+ * driving only ever carries a few degrees of it. The handbrake breaks that
+ * link — the body rotates faster and the velocity stops following — and
+ * letting go snaps it back, which is the moment the car hooks up.
+ */
+export const CHASE = 30;
+export const HAND_CHASE = 0.8;
+export const HAND_YAW_GAIN = 1.85;
+export const MAX_SLIP = 0.92;
+/** Braking the handbrake itself does, m/s^2. Rear wheels only. */
+export const HAND_BRAKE = 6.5;
+/** How hard a sideways car scrubs its own speed off. */
+export const SLIP_DRAG = 0.55;
+/** Slip past this is a drift: it marks the road and shows in the book. */
+export const DRIFT_ANGLE = 0.2;
+
 /** Share of the surface's grip the car reserves for the corner it is braking
  *  into. Below 1 there is a sliver spare for a steering correction; damage
  *  and a bad line eat it. */

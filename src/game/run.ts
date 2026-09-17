@@ -68,12 +68,13 @@ export class Run {
     this.cornerPassed = false;
   }
 
-  update(dt: number, steer: number): void {
+  update(dt: number, steer: number, hand: boolean): void {
     const preview = this.phase === 'choosing';
     const drive = preview ? this.autoSteer() : this.phase === 'driving' ? steer : 0;
     const speedFactor = preview ? 0.4 : this.phase === 'ended' ? 0 : 1;
 
-    this.car.update(dt, drive, this.gen, this.stage, speedFactor, this.phase === 'driving');
+    const pulling = hand && this.phase === 'driving';
+    this.car.update(dt, drive, pulling, this.gen, this.stage, speedFactor, this.phase === 'driving');
     this.gen.ensure(this.car.s, Math.max(MIN_HORIZON_M, this.car.v * HORIZON_SECONDS));
     this.gen.prune(this.car.s);
 

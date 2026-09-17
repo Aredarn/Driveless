@@ -15,7 +15,7 @@ TypeScript + Vite, rendering to Canvas 2D. No game engine dependency. Chosen by 
 Two contexts, served by one build:
 
 - **Desktop browser, keyboard.** Someone at a computer taking a short break. Precise steering, larger viewport, reads more of the track ahead.
-- **Mobile browser, touch, one-handed.** Portrait, thumb steering, weaker GPU, tighter camera.
+- **Mobile browser, touch, one-handed.** Portrait, thumb steering with the handbrake under the same thumb, weaker GPU, tighter camera.
 
 The job in both: start instantly, survive further than the last run, retry immediately. Neither context is the secondary one — an input or layout decision that only works on one of them is incomplete.
 
@@ -38,6 +38,11 @@ Confirmed:
 - Endless procedural track generation, driven ahead of the car, never repeating.
 - Distance-based scoring for a single run.
 - Adaptive input from one build: keyboard on desktop, touch on mobile.
+- Two controls, steering and a handbrake, on both input surfaces. The
+  handbrake breaks rear grip and slides the car; it cannot turn the car
+  faster than the surface allows. This replaces the earlier steering-only
+  constraint, which was set to keep portrait playable one-handed — the touch
+  layout keeps that by putting the brake in a band a thumb already covers.
 - Canvas 2D rendering under a frame budget that must hold on mobile GPUs, not just desktop.
 
 Explicitly undecided, to be settled when the first surface is built — do not treat any of these as answered:
