@@ -54,6 +54,22 @@ export const BRAKE = 11;
  * letting go snaps it back, which is the moment the car hooks up.
  */
 export const CHASE = 30;
+/**
+ * How fast grip returns after a slide, and how fast it lets go. Asymmetric
+ * on purpose: the rear steps out quickly and hooks back up progressively.
+ * Snapping straight back to full bite in one frame is what made releasing
+ * the brake feel like the car teleported upright.
+ */
+export const BITE_LOOSEN_TAU = 0.12;
+export const BITE_GRIP_TAU = 0.45;
+/**
+ * Arcade turn authority. The car may out-turn what the corner geometrically
+ * demands by this much, so a corner taken slightly too fast still comes back
+ * rather than washing wide. Deliberately applied to handling only, never to
+ * the corner speeds the generator and the braking gate are computed from —
+ * so the gate stays honest and errs towards forgiving.
+ */
+export const TURN_AUTHORITY = 1.45;
 export const HAND_CHASE = 0.8;
 export const HAND_YAW_GAIN = 1.85;
 export const MAX_SLIP = 0.92;
@@ -64,7 +80,7 @@ export const MAX_SLIP = 0.92;
  */
 export const HAND_BRAKE = BRAKE;
 /** How hard a sideways car scrubs its own speed off. */
-export const SLIP_DRAG = 0.55;
+export const SLIP_DRAG = 0.32;
 /** Slip past this is a drift: it marks the road and shows in the book. */
 export const DRIFT_ANGLE = 0.2;
 

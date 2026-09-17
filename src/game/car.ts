@@ -1,6 +1,8 @@
 import type { RoadGenerator } from './generator';
 import type { Stage } from './stages';
 import {
+  BITE_GRIP_TAU,
+  BITE_LOOSEN_TAU,
   BRAKE,
   CAR_WIDTH,
   CHASE,
@@ -12,6 +14,7 @@ import {
   HAND_YAW_GAIN,
   MAX_SLIP,
   SLIP_DRAG,
+  TURN_AUTHORITY,
   HIT_GRIP_COST,
   HIT_SPEED_COST,
   OFFROAD_DAMAGE_RATE,
@@ -57,6 +60,8 @@ export class Car {
   /** Where the car has been marking, newest last. */
   readonly marks: { s: number; n: number; heavy: boolean }[] = [];
   private lastMarkS = -Infinity;
+  /** How much the tyres are currently biting; moves, never jumps. */
+  private bite = CHASE;
   offRoad = false;
   lastKnock = 0;
 
@@ -110,9 +115,15 @@ export class Car {
 
     // Everything the car can do laterally comes out of the same grip budget.
     // The handbrake spends it differently: more rotation, far less hold.
-    const cornering = (mu * G) / Math.max(this.v, 7);
+    const cornering = (mu * G * TURN_AUTHORITY) / Math.max(this.v, 7);
     const yaw = steer * cornering * (hand ? HAND_YAW_GAIN : stage.looseness);
-    const chase = cornering * (hand ? HAND_CHASE : CHASE);
+
+    // Grip lets go quickly and comes back progressively, so releasing the
+    // brake hooks the car up over a beat instead of snapping it straight.
+    const wanted = hand ? HAND_CHASE : CHASE;
+    const tau = wanted < this.bite ? BITE_LOOSEN_TAU : BITE_GRIP_TAU;
+    this.bite += (wanted - this.bite) * (1 - Math.exp(-dt / tau));
+    const chase = cornering * this.bite;
 
     // Slip builds while the body out-turns the tyres and decays as they bite.
     this.slip += (yaw - chase * this.slip) * dt;
