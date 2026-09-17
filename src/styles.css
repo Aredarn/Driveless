@@ -149,6 +149,31 @@ body {
   color: var(--ink-soft);
 }
 
+.book__speed {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3ch;
+  margin: calc(var(--step) * 0.5) 0 0;
+  font-weight: 700;
+  font-size: 1.5rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+  transition: color 120ms linear;
+}
+
+.book__speed--braking {
+  color: var(--red);
+}
+
+.book__speed-unit {
+  font-size: 0.56em;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
 .book__best {
   margin: 0;
   min-height: 1.2em;
@@ -435,6 +460,15 @@ body {
 }
 
 .plate__call b {
+  color: var(--ink);
+}
+
+/* A 1 or a 2 is the call that ends runs. It arrives in red. */
+.plate__call--hard b {
+  color: var(--red);
+}
+
+.plate__call--hard span {
   color: var(--red);
 }
 
@@ -476,7 +510,7 @@ body {
 
   .book__head {
     grid-template-columns: 1fr auto;
-    grid-template-areas: 'stage reading' 'damage reading' 'best reading';
+    grid-template-areas: 'stage reading' 'speed reading' 'damage reading' 'best reading';
     align-items: center;
     padding-inline-end: 0;
     gap: 0 calc(var(--step) * 2);
@@ -485,12 +519,41 @@ body {
   .book__stage {
     grid-area: stage;
   }
+  .book__speed {
+    grid-area: speed;
+    font-size: 1.25rem;
+  }
   .book__reading {
     grid-area: reading;
     font-size: clamp(2.75rem, 13vw, 4rem);
     justify-self: end;
   }
-  .book__best {
+  .book__speed {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3ch;
+  margin: calc(var(--step) * 0.5) 0 0;
+  font-weight: 700;
+  font-size: 1.5rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+  transition: color 120ms linear;
+}
+
+.book__speed--braking {
+  color: var(--red);
+}
+
+.book__speed-unit {
+  font-size: 0.56em;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.book__best {
     grid-area: best;
   }
   .damage {

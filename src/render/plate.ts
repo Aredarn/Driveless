@@ -1,3 +1,4 @@
+import type { RoadGenerator } from '../game/generator';
 import type { Run } from '../game/run';
 import type { RoadPoint } from '../game/types';
 import { CAR_LENGTH, CAR_WIDTH } from '../game/tuning';
@@ -80,12 +81,14 @@ export class Plate {
     if (span.length > 2) {
       this.drawSurface(span, stage.edge, stage.id === 'rally');
       this.drawEdges(span, stage.edge);
+      this.drawFurniture(span, gen, stage.edge);
       this.drawJunctions(run, car.s);
       this.drawTicks(span);
       if (stage.id === 'road') this.drawCentreLine(span);
     }
 
     this.drawTraffic(run, ppm);
+    if (car.braking) this.drawBrakeMarks(gen, car.s, car.n);
     this.drawCar(car.offRoad, carX, carY, heading, car.slip, ppm, run.phase === 'ended');
 
     ctx.restore();
@@ -175,7 +178,7 @@ export class Plate {
    */
   private drawGround(cx: number, cy: number, reach: number): void {
     const { ctx } = this;
-    const cell = 26;
+    const cell = 19;
     ctx.save();
     ctx.lineCap = 'butt';
     for (let gx = Math.floor((cx - reach) / cell); gx <= Math.ceil((cx + reach) / cell); gx++) {
@@ -184,12 +187,12 @@ export class Plate {
         const x = (gx + 0.12 + ((seed & 255) / 255) * 0.76) * cell;
         const y = (gy + 0.12 + (((seed >> 8) & 255) / 255) * 0.76) * cell;
         const angle = (((seed >> 16) & 255) / 255) * Math.PI;
-        switch ((seed >> 24) % 5) {
+        switch ((seed >> 24) % 7) {
           case 0:
           case 1: {
             // Hatched field.
-            ctx.strokeStyle = 'rgba(23, 26, 26, 0.13)';
-            ctx.lineWidth = 0.3;
+            ctx.strokeStyle = 'rgba(23, 26, 26, 0.17)';
+            ctx.lineWidth = 0.32;
             ctx.save();
             ctx.translate(x, y);
             ctx.rotate(angle);
@@ -207,7 +210,7 @@ export class Plate {
           case 2:
           case 3: {
             // Scrub stipple.
-            ctx.fillStyle = 'rgba(23, 26, 26, 0.19)';
+            ctx.fillStyle = 'rgba(23, 26, 26, 0.24)';
             for (let i = 0; i < 7; i++) {
               const px = x + Math.cos(angle * (i + 1) * 2.3) * (2 + i * 0.9);
               const py = y + Math.sin(angle * (i + 1) * 1.7) * (2 + i * 0.9);
@@ -217,12 +220,55 @@ export class Plate {
             }
             break;
           }
+          case 4: {
+            // Woodland: a block of crowns, drawn as the plate would screen it.
+            const crowns = 9 + (seed % 8);
+            ctx.fillStyle = 'rgba(23, 26, 26, 0.1)';
+            ctx.strokeStyle = 'rgba(23, 26, 26, 0.34)';
+            ctx.lineWidth = 0.16;
+            for (let i = 0; i < crowns; i++) {
+              const px = x + Math.cos(angle * 3 + i * 2.1) * (2 + (i % 5) * 2.2);
+              const py = y + Math.sin(angle * 2 + i * 1.6) * (2 + (i % 4) * 2.3);
+              ctx.beginPath();
+              ctx.arc(px, py, 0.95 + ((seed >> i) & 3) * 0.22, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.stroke();
+            }
+            break;
+          }
+          case 5: {
+            // A building or two: the stage runs past somebody's yard.
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+            const count = 1 + (seed % 3);
+            for (let i = 0; i < count; i++) {
+              const w = 3.4 + ((seed >> (i * 3)) & 3) * 0.8;
+              const h = 2.6 + ((seed >> (i * 2)) & 3) * 0.7;
+              const bx = i * 6 - 4;
+              const by = ((seed >> i) & 3) - 2;
+              ctx.beginPath();
+              ctx.rect(bx, by, w, h);
+              ctx.fillStyle = 'rgba(23, 26, 26, 0.16)';
+              ctx.fill();
+              ctx.strokeStyle = 'rgba(23, 26, 26, 0.58)';
+              ctx.lineWidth = 0.24;
+              ctx.stroke();
+              // Ridge line, so a roof reads as a roof and not a filled box.
+              ctx.beginPath();
+              ctx.moveTo(bx, by + h / 2);
+              ctx.lineTo(bx + w, by + h / 2);
+              ctx.stroke();
+            }
+            ctx.restore();
+            break;
+          }
           default: {
             // Contour stroke.
-            ctx.strokeStyle = 'rgba(23, 26, 26, 0.1)';
+            ctx.strokeStyle = 'rgba(23, 26, 26, 0.13)';
             ctx.lineWidth = 0.34;
             ctx.beginPath();
-            ctx.arc(x, y, 9 + (seed % 7), angle, angle + 1.9);
+            ctx.arc(x, y, 7 + (seed % 13), angle, angle + 0.9 + ((seed >> 5) % 5) * 0.45);
             ctx.stroke();
           }
         }
@@ -351,6 +397,83 @@ export class Plate {
     }
   }
 
+  /**
+   * What stands at the edge of the road: hedge and poles on the open road,
+   * barrier on the circuit, trees and walls on a rally stage. It hugs the
+   * road through the tight stuff, which is where a stage feels like it is
+   * closing in on you.
+   */
+  private drawFurniture(span: RoadPoint[], gen: RoadGenerator, edge: string): void {
+    const { ctx } = this;
+    for (let i = 0; i < span.length; i += 2) {
+      const p = span[i]!;
+      const n = rightNormal(p.h);
+      const tight = Math.min(1, Math.abs(gen.curvatureAt(p.s)) * 55);
+      // Close in where the road bends hardest.
+      const stand = p.w + (edge === 'kerb' ? 3.2 : 4.4) - tight * 2.4;
+      const metres = Math.round(p.s);
+
+      for (const side of [1, -1]) {
+        const x = p.x + n.x * stand * side;
+        const y = p.y + n.y * stand * side;
+
+        if (edge === 'kerb') {
+          if (metres % 6 !== 0) continue;
+          ctx.strokeStyle = 'rgba(23, 26, 26, 0.55)';
+          ctx.lineWidth = 0.26;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + n.x * 1.1 * side, y + n.y * 1.1 * side);
+          ctx.stroke();
+          continue;
+        }
+
+        if (edge === 'verge') {
+          // Hedgerow: a broken line the way a printed field boundary is.
+          if (metres % 6 !== 0) continue;
+          const along = { x: -n.y, y: n.x };
+          ctx.strokeStyle = 'rgba(23, 26, 26, 0.34)';
+          ctx.lineWidth = 0.42;
+          ctx.beginPath();
+          ctx.moveTo(x - along.x * 1.7, y - along.y * 1.7);
+          ctx.lineTo(x + along.x * 1.7, y + along.y * 1.7);
+          ctx.stroke();
+          if (metres % 44 === 0) {
+            // Telegraph pole.
+            ctx.strokeStyle = 'rgba(23, 26, 26, 0.62)';
+            ctx.lineWidth = 0.3;
+            const t1 = { x: -n.y, y: n.x };
+            ctx.beginPath();
+            ctx.moveTo(x - t1.x * 1.4, y - t1.y * 1.4);
+            ctx.lineTo(x + t1.x * 1.4, y + t1.y * 1.4);
+            ctx.stroke();
+          }
+          continue;
+        }
+
+        // Rally: trees close in, with drystone wall through the tight stuff.
+        if (tight > 0.55 && metres % 3 === 0) {
+          ctx.strokeStyle = 'rgba(23, 26, 26, 0.8)';
+          ctx.lineWidth = 0.75;
+          const t1 = { x: -n.y, y: n.x };
+          ctx.beginPath();
+          ctx.moveTo(x - t1.x * 1.6, y - t1.y * 1.6);
+          ctx.lineTo(x + t1.x * 1.6, y + t1.y * 1.6);
+          ctx.stroke();
+        } else if (metres % 6 === 0) {
+          const crown = 1.4 + ((metres / 6) % 3) * 0.5;
+          ctx.fillStyle = 'rgba(23, 26, 26, 0.14)';
+          ctx.strokeStyle = 'rgba(23, 26, 26, 0.52)';
+          ctx.lineWidth = 0.22;
+          ctx.beginPath();
+          ctx.arc(x, y, crown, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        }
+      }
+    }
+  }
+
   /** A side road where the notation calls a junction: the caution is a
    *  thing in the world, not a word on the page. */
   private drawJunctions(run: Run, s: number): void {
@@ -441,6 +564,26 @@ export class Plate {
         ctx.fillRect(veh.length * 0.04, -veh.width / 2 + 0.28, 0.9, veh.width - 0.56);
       }
       ctx.restore();
+    }
+  }
+
+  /** Where the car has been shedding speed, laid down like tyre marks. */
+  private drawBrakeMarks(gen: RoadGenerator, s: number, n: number): void {
+    const { ctx } = this;
+    ctx.strokeStyle = 'rgba(23, 26, 26, 0.34)';
+    ctx.lineWidth = 0.32;
+    for (const offset of [-0.62, 0.62]) {
+      ctx.beginPath();
+      for (let back = 0; back <= 16; back += 2) {
+        const p = gen.pointAt(Math.max(0, s - back));
+        const nor = rightNormal(p.h);
+        const lat = n + offset;
+        const x = p.x + nor.x * lat;
+        const y = p.y + nor.y * lat;
+        if (back === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
     }
   }
 

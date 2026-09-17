@@ -1,141 +1,205 @@
 import { Rng } from './rng';
 import type { Caution, Note } from './notes';
-import { severityLoad, sweepFor } from './notes';
+import { cornerSpeed, radiusFor, sweepFor } from './notes';
 import type { RoadPoint, Segment } from './types';
 import type { Stage } from './stages';
-import { G, MIN_HORIZON_M, PASSABILITY_MARGIN, SAMPLE_M, severityPressure } from './tuning';
+import { BRAKE, G, MIN_HORIZON_M, SAMPLE_M, severityPressure } from './tuning';
 
-const CAUTIONS: Caution[] = ['CREST', 'NARROWS', 'CARE', 'JUNCTION'];
+/** A phrase is a shape of road, not a single corner. */
+type Phrase = 'straight' | 'sweeper' | 'esses' | 'chicane' | 'hairpin' | 'tightening';
 
 /**
  * Writes the road ahead of the car and the notation describing it in the
  * same pass, so the book can never call a corner the road does not have.
  *
- * The obligation the product makes: whatever is written must remain passable
- * at the speed the car will be carrying when it arrives. Curvature is
- * therefore never chosen freely — it is chosen as a share of the adhesion
- * limit at that expected speed, and the share is what escalates.
+ * The obligation the product makes: every corner is reachable. Corners carry
+ * absolute radii — a hairpin is a hairpin however fast the run has become —
+ * and the generator guarantees there is enough road in front of each one to
+ * brake into it from the speed the previous phrase leaves the car carrying.
+ * What escalates with distance is how often the road asks for the hard stuff,
+ * not how far it bends.
+ *
+ * Road is built in phrases rather than independent corners: esses, chicanes,
+ * hairpins and tightening sequences, because a stage that is only unrelated
+ * bends reads the same at every distance.
  */
 export class RoadGenerator {
   readonly segments: Segment[] = [];
   private points: RoadPoint[] = [];
   private head = { x: 0, y: 0, h: 0, s: 0, w: 0 };
   private lastDir: 1 | -1 = 1;
-  private sinceCorner = 0;
+  /** Speed the car will be carrying as it leaves what has been written. */
+  private exitSpeed: number;
 
   constructor(
     private readonly stage: Stage,
     private readonly rng: Rng,
-    /** Expected speed in m/s at a given distance travelled. */
-    private readonly expectedSpeed: (distanceM: number) => number,
-    /** Road is written from here, so a run never starts on a cut edge. */
+    /** Top speed in m/s at a given distance travelled. */
+    private readonly topSpeed: (distanceM: number) => number,
     startS = 0,
   ) {
     this.head.s = startS;
     this.head.w = stage.halfWidth;
     this.points.push({ ...this.head });
+    this.exitSpeed = topSpeed(0);
   }
 
   get writtenTo(): number {
     return this.head.s;
   }
 
-  /** Writes road until it extends `aheadM` beyond `s`. */
   ensure(s: number, aheadM: number): void {
     const target = s + Math.max(aheadM, MIN_HORIZON_M);
     let guard = 0;
-    while (this.head.s < target && guard++ < 200) {
-      this.writeSegment();
+    while (this.head.s < target && guard++ < 120) {
+      this.writePhrase();
     }
   }
 
-  private writeSegment(): void {
-    const startS = this.head.s;
-    const v = Math.max(8, this.expectedSpeed(Math.max(0, startS)));
-    const pressure = severityPressure(Math.max(0, startS));
+  private writePhrase(): void {
+    const pressure = severityPressure(Math.max(0, this.head.s));
+    const phrase = this.pickPhrase(pressure);
 
-    // The most curvature this surface can hold at that speed, with room left
-    // for the player to react.
-    const limit = (PASSABILITY_MARGIN * this.stage.mu * G) / Math.max(v * v, 36);
+    switch (phrase) {
+      case 'straight':
+        this.writeStraight(this.rng.range(55, 190) * (1 - 0.4 * pressure) + 30, null);
+        break;
 
-    const straightChance = this.stage.straightBias * (1 - 0.45 * pressure);
-    const wantStraight = this.sinceCorner < 1 ? false : this.rng.chance(straightChance);
-
-    let note: Note;
-    let curvature: number;
-    let length: number;
-    let halfWidth = this.stage.halfWidth;
-
-    if (wantStraight) {
-      const seconds = this.rng.range(0.55, 2.1) * (1 - 0.35 * pressure);
-      length = clamp(v * seconds, 36, 620);
-      curvature = 0;
-      note = { dir: 'S', severity: 0, runM: 0, caution: null };
-      this.sinceCorner = 0;
-    } else {
-      const severity = this.pickSeverity(pressure);
-      const sweep = sweepFor(severity) * this.rng.range(0.82, 1.24);
-      const magnitude = severityLoad(severity) * limit;
-      // Alternate direction more often than chance would, the way a real
-      // stage reads, without ever making it predictable.
-      const dirSign: 1 | -1 = this.rng.chance(0.68) ? (-this.lastDir as 1 | -1) : this.lastDir;
-      this.lastDir = dirSign;
-      curvature = magnitude * dirSign;
-      length = clamp(sweep / magnitude, 42, 900);
-
-      let caution: Caution | null = null;
-      if (this.rng.chance(0.16)) {
-        caution = this.rng.pick(CAUTIONS);
-        if (caution === 'NARROWS') halfWidth *= 0.76;
+      case 'sweeper': {
+        const severity = this.rng.chance(0.5) ? 5 : 6;
+        this.writeCorner(severity, this.nextDir(), this.rng.chance(0.3) ? 'LONG' : null);
+        break;
       }
 
-      note = {
-        dir: dirSign > 0 ? 'R' : 'L',
-        severity,
-        runM: 0,
-        caution,
-      };
-      this.sinceCorner += 1;
+      case 'esses': {
+        // Alternating medium corners with no straight between them.
+        const count = 2 + this.rng.int(1, 3);
+        let dir = this.nextDir();
+        for (let i = 0; i < count; i++) {
+          const severity = 3 + this.rng.int(0, 1);
+          this.writeCorner(severity, dir, i === 0 ? 'INTO' : null);
+          dir = -dir as 1 | -1;
+          this.lastDir = dir;
+        }
+        break;
+      }
+
+      case 'chicane': {
+        const dir = this.nextDir();
+        this.writeCorner(2, dir, 'INTO');
+        this.writeCorner(2, -dir as 1 | -1, null);
+        this.lastDir = -dir as 1 | -1;
+        break;
+      }
+
+      case 'hairpin':
+        this.writeCorner(1, this.nextDir(), 'CARE');
+        break;
+
+      case 'tightening': {
+        // One corner that arrives open and closes on you.
+        const dir = this.nextDir();
+        this.writeCorner(4, dir, 'TIGHTENS');
+        this.writeCorner(this.rng.chance(0.5) ? 2 : 3, dir, null);
+        break;
+      }
     }
+  }
 
-    // Segment lengths are whole samples, so stepping the centreline is exact.
-    length = Math.max(SAMPLE_M * 4, Math.round(length / SAMPLE_M) * SAMPLE_M);
-    note.runM = Math.round(length);
+  private pickPhrase(pressure: number): Phrase {
+    const roll = this.rng.next();
+    // Early road is mostly open; the hard shapes arrive as pressure rises.
+    // The stage decides how much of it is straight at all: an open road
+    // breathes, a circuit links up, a rally stage barely stops turning.
+    const straight = this.stage.straightBias * 0.8 * (1 - 0.55 * pressure);
+    const sweeper = straight + 0.26 * (1 - 0.3 * pressure);
+    const esses = sweeper + 0.14 + 0.1 * pressure;
+    const tightening = esses + 0.08 + 0.08 * pressure;
+    const chicane = tightening + 0.06 + 0.09 * pressure;
+    if (roll < straight) return 'straight';
+    if (roll < sweeper) return 'sweeper';
+    if (roll < esses) return 'esses';
+    if (roll < tightening) return 'tightening';
+    if (roll < chicane) return 'chicane';
+    return 'hairpin';
+  }
 
+  private nextDir(): 1 | -1 {
+    const dir: 1 | -1 = this.rng.chance(0.72) ? (-this.lastDir as 1 | -1) : this.lastDir;
+    this.lastDir = dir;
+    return dir;
+  }
+
+  /**
+   * Emits a corner, inserting the run-in it needs first. This is where the
+   * reachability promise is kept: if the car cannot shed the speed in the
+   * road that exists, more road is written before the corner rather than the
+   * corner being softened.
+   */
+  private writeCorner(severity: number, dir: 1 | -1, caution: Caution | null): void {
+    const speed = cornerSpeed(severity, this.stage.mu, G);
+    const needed = Math.max(0, (this.exitSpeed * this.exitSpeed - speed * speed) / (2 * BRAKE));
+    if (needed > SAMPLE_M * 2) this.writeStraight(needed + 25, null);
+
+    const radius = radiusFor(severity) * this.rng.range(0.88, 1.18);
+    const sweep = sweepFor(severity) * this.rng.range(0.85, 1.2);
+    let halfWidth = this.stage.halfWidth;
+
+    let mark = caution;
+    if (!mark && this.rng.chance(0.14)) {
+      mark = this.rng.pick(['CREST', 'NARROWS', 'JUNCTION'] as Caution[]);
+    }
+    if (mark === 'NARROWS') halfWidth *= 0.74;
+
+    this.push({
+      curvature: dir / radius,
+      length: sweep * radius,
+      halfWidth,
+      note: { dir: dir > 0 ? 'R' : 'L', severity, runM: 0, caution: mark },
+    });
+    this.exitSpeed = speed;
+  }
+
+  private writeStraight(length: number, caution: Caution | null): void {
+    this.push({
+      curvature: 0,
+      length: clamp(length, 30, 900),
+      halfWidth: this.stage.halfWidth,
+      note: { dir: 'S', severity: 0, runM: 0, caution },
+    });
+    this.exitSpeed = this.topSpeed(Math.max(0, this.head.s));
+  }
+
+  private push(spec: {
+    curvature: number;
+    length: number;
+    halfWidth: number;
+    note: Note;
+  }): void {
+    // Whole samples, so stepping the centreline is exact.
+    const length = Math.max(SAMPLE_M * 3, Math.round(spec.length / SAMPLE_M) * SAMPLE_M);
+    spec.note.runM = Math.round(length);
     const segment: Segment = {
       index: this.segments.length,
-      startS,
+      startS: this.head.s,
       length,
-      curvature,
-      note,
-      halfWidth,
+      curvature: spec.curvature,
+      note: spec.note,
+      halfWidth: spec.halfWidth,
     };
     this.segments.push(segment);
-    this.sample(segment);
-  }
 
-  private pickSeverity(pressure: number): number {
-    // Skews toward 1 (tightest) as pressure rises. The corner never exceeds
-    // the adhesion limit either way — what rises is how close to it the road
-    // is written.
-    const roll = Math.pow(this.rng.next(), 1 / (0.55 + 1.7 * pressure));
-    return clamp(Math.round(6 - roll * 5), 1, 6);
-  }
-
-  private sample(segment: Segment): void {
-    const steps = Math.round(segment.length / SAMPLE_M);
+    const steps = Math.round(length / SAMPLE_M);
     for (let i = 0; i < steps; i++) {
       this.head.h += segment.curvature * SAMPLE_M;
       this.head.x += Math.cos(this.head.h) * SAMPLE_M;
       this.head.y += Math.sin(this.head.h) * SAMPLE_M;
       this.head.s += SAMPLE_M;
-      // Width eases across a join rather than stepping.
       this.head.w += (segment.halfWidth - this.head.w) * 0.14;
       this.points.push({ ...this.head });
     }
   }
 
-  /** Drops road the car has left behind. */
   prune(s: number): void {
     const keepFrom = s - 160;
     let drop = 0;
@@ -159,7 +223,6 @@ export class RoadGenerator {
     };
   }
 
-  /** Points spanning [from, to], for drawing the road band. */
   span(from: number, to: number): RoadPoint[] {
     const first = this.points[0]!;
     const lo = clamp(Math.floor((from - first.s) / SAMPLE_M), 0, this.points.length - 1);
@@ -182,6 +245,23 @@ export class RoadGenerator {
 
   curvatureAt(s: number): number {
     return this.segmentAt(s).curvature;
+  }
+
+  /** The tightest curvature anywhere in [from, to]: what the car brakes for. */
+  worstCurvatureIn(from: number, to: number): { curvature: number; at: number } {
+    let worst = 0;
+    let at = to;
+    const first = this.segmentAt(from);
+    for (let i = first.index; i < this.segments.length; i++) {
+      const seg = this.segments[i]!;
+      if (seg.startS > to) break;
+      if (seg.startS + seg.length < from) continue;
+      if (Math.abs(seg.curvature) > Math.abs(worst)) {
+        worst = seg.curvature;
+        at = Math.max(from, seg.startS);
+      }
+    }
+    return { curvature: worst, at };
   }
 
   /** The next `count` corners, straights skipped: the book's own reading. */

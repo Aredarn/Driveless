@@ -1,7 +1,9 @@
 import type { RoadGenerator } from './generator';
 import type { Stage } from './stages';
 import {
+  BRAKE,
   CAR_WIDTH,
+  CORNER_MARGIN,
   G,
   HIT_GRIP_COST,
   HIT_SPEED_COST,
@@ -13,9 +15,14 @@ import {
 
 /**
  * The car lives in the road's own frame: distance along the centreline,
- * lateral offset from it, and heading relative to the tangent. Steering is
- * the only control — the throttle is the distance ramp, which is what makes
- * speed the difficulty curve rather than the player's patience.
+ * lateral offset from it, and heading relative to the tangent.
+ *
+ * Steering is the only control the player has. The throttle is not a ramp:
+ * the car reads the road ahead and brakes for what it cannot hold, so speed
+ * rises and falls with the shape of the stage. That is what lets the road
+ * contain hairpins and chicanes at all — while the car only ever accelerated,
+ * every corner had to be gentle enough to take flat, and the stage got
+ * blander the faster the run became.
  */
 export class Car {
   s = 0;
@@ -31,6 +38,8 @@ export class Car {
   gripScale = 1;
   /** Smoothed slide angle, for drawing a car that is sideways when it is. */
   slip = 0;
+  /** True while shedding speed for something ahead. */
+  braking = false;
   offRoad = false;
   lastKnock = 0;
 
@@ -56,10 +65,27 @@ export class Car {
     this.offRoad = Math.abs(this.n) > point.w + CAR_WIDTH * 0.35;
     const mu = stage.mu * this.gripScale * (this.offRoad ? OFFROAD_GRIP : 1);
 
-    const target =
+    const flatOut =
       stage.topSpeed * this.speedScale * speedFactor * speedRamp(this.s) * (this.offRoad ? 0.5 : 1);
-    const tau = this.v < target ? 3.6 : this.offRoad ? 1 / OFFROAD_DRAG : 1.7;
-    this.v += (target - this.v) * (1 - Math.exp(-dt / tau));
+
+    // Look far enough ahead to stop for anything inside braking range, and
+    // brake for the tightest thing in it.
+    const zone = (this.v * this.v) / (2 * BRAKE) + 55;
+    const worst = gen.worstCurvatureIn(this.s, this.s + zone);
+    let target = flatOut;
+    if (Math.abs(worst.curvature) > 1e-6) {
+      const hold = Math.sqrt((mu * CORNER_MARGIN * G) / Math.abs(worst.curvature));
+      const runIn = Math.max(0, worst.at - this.s);
+      target = Math.min(target, Math.sqrt(hold * hold + 2 * BRAKE * runIn));
+    }
+
+    this.braking = target < this.v - 0.5;
+    if (this.v > target) {
+      const rate = this.offRoad ? BRAKE * OFFROAD_DRAG : BRAKE;
+      this.v = Math.max(target, this.v - rate * dt);
+    } else {
+      this.v += (target - this.v) * (1 - Math.exp(-dt / 3.2));
+    }
 
     // Everything the car can do laterally comes out of the same grip budget.
     const maxYaw = (mu * G) / Math.max(this.v, 7);

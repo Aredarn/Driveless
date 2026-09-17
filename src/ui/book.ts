@@ -9,6 +9,8 @@ export interface BookRefs {
   stageName: HTMLElement;
   stageChip: HTMLElement;
   distance: HTMLElement;
+  speed: HTMLElement;
+  speedLine: HTMLElement;
   best: HTMLElement;
   damage: HTMLElement;
   notes: HTMLElement;
@@ -25,6 +27,7 @@ export class Book {
   private marks: HTMLElement[] = [];
   private rows = new Map<number, HTMLLIElement>();
   private shownHits = -1;
+  private shownSpeed = -1;
   private token = -1;
 
   constructor(private readonly refs: BookRefs) {
@@ -54,10 +57,23 @@ export class Book {
       this.token = run.token;
       this.rows.clear();
       this.shownHits = -1;
+      this.shownSpeed = -1;
       refs.notes.replaceChildren();
     }
 
     refs.distance.textContent = (run.distance / 1000).toFixed(2);
+
+    // Speed is a reading now, not a constant: the car brakes for what the
+    // book is calling, so the figure falls into a corner and climbs out.
+    const kmh = Math.round(run.car.v * 3.6);
+    if (kmh !== this.shownSpeed) {
+      this.shownSpeed = kmh;
+      refs.speed.textContent = String(kmh);
+    }
+    refs.speedLine.classList.toggle(
+      'book__speed--braking',
+      run.car.braking && run.phase === 'driving',
+    );
 
     const best = run.bestForStage;
     refs.best.textContent = best > 0 ? `Best ${(best / 1000).toFixed(2)} km` : '';
@@ -164,6 +180,7 @@ export class Book {
     const key = `call-${corner.index}`;
     if (call.dataset.state === key) return;
     call.dataset.state = key;
+    call.classList.toggle('plate__call--hard', corner.note.severity <= 2);
     call.replaceChildren(
       text('b', noteCode(corner.note)),
       text('span', corner.note.caution ?? `${corner.note.runM} m`),

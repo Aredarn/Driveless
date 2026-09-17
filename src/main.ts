@@ -21,6 +21,8 @@ const book = new Book({
   stageName: need('#stage-name'),
   stageChip: need('#stage-chip'),
   distance: need('#distance'),
+  speed: need('#speed'),
+  speedLine: need('#speed-line'),
   best: need('#best'),
   damage: need('#damage'),
   notes: need('#notes'),

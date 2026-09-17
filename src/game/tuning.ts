@@ -23,28 +23,33 @@ export const OFFROAD_DRAG = 1.45;
 /** Speed ramp: the difficulty curve. Top speed approaches stage.topSpeed
  *  times this, over distance travelled in metres. */
 export function speedRamp(distanceM: number): number {
-  return 0.62 + 0.38 * (1 - Math.exp(-distanceM / 5200));
+  return 0.68 + 0.32 * (1 - Math.exp(-distanceM / 3000));
 }
 
 /** How hard the generator leans on the adhesion limit, over distance.
  *  Corners start well inside what the car can hold and end just under it. */
 export function severityPressure(distanceM: number): number {
-  return Math.min(1, 0.32 + 0.68 * (1 - Math.exp(-distanceM / 4200)));
+  return Math.min(1, 0.3 + 0.7 * (1 - Math.exp(-distanceM / 2400)));
 }
 
 /** Traffic per kilometre of road ahead, over distance travelled. */
 export function trafficDensity(distanceM: number): number {
-  return 5 + 9 * (1 - Math.exp(-distanceM / 6000));
+  return 7 + 11 * (1 - Math.exp(-distanceM / 4500));
 }
 
-/** Safety margin applied to the adhesion limit when a corner is written.
- *  1.0 would mean every corner sits exactly on the limit with no room for
- *  the player's reaction time. */
-export const PASSABILITY_MARGIN = 0.82;
+/** How hard the car can shed speed, m/s^2. The generator measures every
+ *  corner's run-in against this, so it is the number that decides whether a
+ *  hairpin after a fast sweeper is fair or cruel. */
+export const BRAKE = 11;
+
+/** Share of the surface's grip the car reserves for the corner it is braking
+ *  into. Below 1 there is a sliver spare for a steering correction; damage
+ *  and a bad line eat it. */
+export const CORNER_MARGIN = 0.92;
 
 /** How far ahead the road is written, in seconds of travel. */
-export const HORIZON_SECONDS = 14;
-export const MIN_HORIZON_M = 700;
+export const HORIZON_SECONDS = 16;
+export const MIN_HORIZON_M = 950;
 
 /** Road written behind the start line, so the plate never shows a cut edge. */
 export const RUN_IN_M = 220;

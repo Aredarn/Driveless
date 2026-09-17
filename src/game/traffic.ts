@@ -64,13 +64,16 @@ export class Traffic {
     const lane = this.stage.halfWidth * 0.5;
     const oncoming = this.rng.chance(0.42);
     const cruise = this.stage.topSpeed * speedRamp(car.s);
+    // Every so often it is a truck: long, slow, and squarely in the way.
+    const truck = this.rng.chance(0.22);
     this.vehicles.push({
       s: car.s + this.rng.range(SPAWN_NEAR, SPAWN_FAR),
       n: oncoming ? -lane + this.rng.range(-0.5, 0.5) : lane + this.rng.range(-0.5, 0.5),
-      v: oncoming ? cruise * this.rng.range(0.45, 0.68) : cruise * this.rng.range(0.4, 0.66),
+      v: (oncoming ? cruise * this.rng.range(0.45, 0.68) : cruise * this.rng.range(0.4, 0.66)) *
+        (truck ? 0.68 : 1),
       dir: oncoming ? -1 : 1,
-      length: this.rng.range(4.2, 7.6),
-      width: this.rng.range(1.8, 2.2),
+      length: truck ? this.rng.range(11, 16) : this.rng.range(4.2, 7.6),
+      width: truck ? this.rng.range(2.4, 2.7) : this.rng.range(1.8, 2.2),
       shade: this.rng.next(),
     });
   }
