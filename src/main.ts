@@ -6,6 +6,11 @@ import type { StageId } from './game/types';
 import { Plate } from './render/plate';
 import { Book } from './ui/book';
 
+interface Drive {
+  steer: number;
+  brake: boolean;
+}
+
 const need = <T extends Element>(selector: string): T => {
   const el = document.querySelector<T>(selector);
   if (!el) throw new Error(`Missing element: ${selector}`);
@@ -78,7 +83,21 @@ function frame(now: number): void {
   last = now;
 
   input.update(dt);
-  run.update(dt, input.steer, input.brake);
+
+  let steer = input.steer;
+  let brake = input.brake;
+  if (import.meta.env.DEV) {
+    // Development only, and folded away in the production bundle: lets a
+    // headless driver hold a real fraction of lock instead of slamming a key
+    // fully on and fully off, which is the only way to measure handling
+    // rather than the test harness's own steering.
+    const dev = (window as unknown as { __driveless?: { drive?: Drive | null } }).__driveless;
+    if (dev?.drive) {
+      steer = dev.drive.steer;
+      brake = dev.drive.brake;
+    }
+  }
+  run.update(dt, steer, brake);
 
   const ended = run.phase === 'ended';
   if (ended && !wasEnded) endedAt = now;
@@ -96,8 +115,11 @@ document.addEventListener('visibilitychange', () => {
 
 if (import.meta.env.DEV) {
   // Development only, and stripped from the production bundle: lets a
-  // headless browser read the run it is driving.
-  (window as unknown as { __driveless?: unknown }).__driveless = { run };
+  // headless browser read the run it is driving, and drive it.
+  (window as unknown as { __driveless?: unknown }).__driveless = {
+    run,
+    drive: null as Drive | null,
+  };
 }
 
 requestAnimationFrame(frame);

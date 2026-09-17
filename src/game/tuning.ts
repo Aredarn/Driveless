@@ -15,9 +15,11 @@ export const MAX_HITS = 4;
 export const HIT_SPEED_COST = 0.12;
 export const HIT_GRIP_COST = 0.07;
 
-/** Off the road surface: grip left, and hits accrued per second of scraping. */
+/** Off the road surface: grip left, and hits accrued per second of scraping.
+ *  Running wide costs speed and time; it is not meant to end the run before
+ *  the player has had a chance to get back on. */
 export const OFFROAD_GRIP = 0.34;
-export const OFFROAD_DAMAGE_RATE = 0.55;
+export const OFFROAD_DAMAGE_RATE = 0.18;
 export const OFFROAD_DRAG = 1.45;
 
 /** Speed ramp: the difficulty curve. Top speed approaches stage.topSpeed
@@ -29,7 +31,7 @@ export function speedRamp(distanceM: number): number {
 /** How hard the generator leans on the adhesion limit, over distance.
  *  Corners start well inside what the car can hold and end just under it. */
 export function severityPressure(distanceM: number): number {
-  return Math.min(1, 0.3 + 0.7 * (1 - Math.exp(-distanceM / 2400)));
+  return Math.min(1, 0.06 + 0.94 * (1 - Math.exp(-distanceM / 2600)));
 }
 
 /** Traffic per kilometre of road ahead, over distance travelled. */
@@ -65,6 +67,14 @@ export const HAND_BRAKE = BRAKE;
 export const SLIP_DRAG = 0.55;
 /** Slip past this is a drift: it marks the road and shows in the book. */
 export const DRIFT_ANGLE = 0.2;
+
+/**
+ * The braking gate is drawn this far before the last possible moment, so
+ * that "brake when it reaches the car" is actually the right move. Measured:
+ * braking exactly at the theoretical point still ended runs, braking 25 m
+ * early roughly doubled the distance, and 60 m early was worse again.
+ */
+export const CUE_LEAD = 25;
 
 /** Share of the surface's grip the car reserves for the corner it is braking
  *  into. Below 1 there is a sliver spare for a steering correction; damage

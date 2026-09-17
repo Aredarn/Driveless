@@ -28,6 +28,7 @@ export class RoadGenerator {
   private points: RoadPoint[] = [];
   private head = { x: 0, y: 0, h: 0, s: 0, w: 0 };
   private lastDir: 1 | -1 = 1;
+  private lastPhrase: Phrase | null = null;
   /** Speed the car will be carrying as it leaves what has been written. */
   private exitSpeed: number;
 
@@ -59,10 +60,11 @@ export class RoadGenerator {
   private writePhrase(): void {
     const pressure = severityPressure(Math.max(0, this.head.s));
     const phrase = this.pickPhrase(pressure);
+    this.lastPhrase = phrase;
 
     switch (phrase) {
       case 'straight':
-        this.writeStraight(this.rng.range(55, 190) * (1 - 0.4 * pressure) + 30, null);
+        this.writeStraight(this.rng.range(45, 140) * (1 - 0.4 * pressure) + 25, null);
         break;
 
       case 'sweeper': {
@@ -106,22 +108,32 @@ export class RoadGenerator {
     }
   }
 
+  /**
+   * Weighted, and normalised rather than leaving one shape to collect the
+   * remainder — a hairpin taking whatever is left over is how the opening
+   * kilometre ended up one-in-five hairpins with nothing to brake for it.
+   * Straight absorbs the slack instead, and the hard shapes only arrive as
+   * pressure rises.
+   */
   private pickPhrase(pressure: number): Phrase {
-    const roll = this.rng.next();
-    // Early road is mostly open; the hard shapes arrive as pressure rises.
-    // The stage decides how much of it is straight at all: an open road
-    // breathes, a circuit links up, a rally stage barely stops turning.
-    const straight = this.stage.straightBias * 0.8 * (1 - 0.55 * pressure);
-    const sweeper = straight + 0.26 * (1 - 0.3 * pressure);
-    const esses = sweeper + 0.14 + 0.1 * pressure;
-    const tightening = esses + 0.08 + 0.08 * pressure;
-    const chicane = tightening + 0.06 + 0.09 * pressure;
-    if (roll < straight) return 'straight';
-    if (roll < sweeper) return 'sweeper';
-    if (roll < esses) return 'esses';
-    if (roll < tightening) return 'tightening';
-    if (roll < chicane) return 'chicane';
-    return 'hairpin';
+    const weights: [Phrase, number][] = [
+      // Never two straights running: back to back they stack into the dead
+      // stretches this road grammar exists to remove. The run-in a corner
+      // needs is written separately and is not affected by this.
+      ['straight', this.lastPhrase === 'straight' ? 0 : this.stage.straightBias * (1.15 - 0.5 * pressure)],
+      ['sweeper', 0.3 * (1 - 0.35 * pressure)],
+      ['esses', 0.06 + 0.16 * pressure],
+      ['tightening', 0.03 + 0.12 * pressure],
+      ['chicane', 0.02 + 0.13 * pressure],
+      ['hairpin', 0.015 + 0.11 * pressure],
+    ];
+    const total = weights.reduce((sum, [, w]) => sum + w, 0);
+    let roll = this.rng.next() * total;
+    for (const [phrase, weight] of weights) {
+      roll -= weight;
+      if (roll <= 0) return phrase;
+    }
+    return 'straight';
   }
 
   private nextDir(): 1 | -1 {

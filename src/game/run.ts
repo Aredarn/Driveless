@@ -7,6 +7,7 @@ import type { Segment, StageId } from './types';
 import {
   BRAKE,
   CORNER_MARGIN,
+  CUE_LEAD,
   G,
   HORIZON_SECONDS,
   MAX_HITS,
@@ -108,11 +109,12 @@ export class Run {
   }
 
   /**
-   * The braking point for whatever is tightest in range: how far the car can
-   * still run before it has to be slowing, and the speed it needs to arrive
-   * at. Negative metres means the moment has passed and the corner is going
-   * to arrive too fast. Nothing acts on this — it is what the plate draws so
-   * the player can learn where the point is.
+   * The braking gate for whatever is tightest in range: how far the car can
+   * still run before it should be slowing, and the speed it needs to arrive
+   * at. It carries CUE_LEAD of margin, so reaching it is the moment to brake
+   * rather than the last moment braking would work. Negative metres means the
+   * corner is going to arrive too fast. Nothing acts on this — it is what the
+   * plate draws so the player can learn where the point is.
    */
   brakeCue(): { metres: number; hold: number; late: boolean } | null {
     const car = this.car;
@@ -123,7 +125,7 @@ export class Run {
     const hold = Math.sqrt((mu * CORNER_MARGIN * G) / Math.abs(worst.curvature));
     if (car.v <= hold) return null;
     const needed = (car.v * car.v - hold * hold) / (2 * BRAKE);
-    const metres = worst.at - car.s - needed;
+    const metres = worst.at - car.s - needed - CUE_LEAD;
     return { metres, hold, late: metres <= 0 };
   }
 
