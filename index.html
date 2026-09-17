@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <title>Driveless</title>
+    <meta
+      name="description"
+      content="An endless topdown driving run. The road is written a beat before you reach it, and the co-driver's book calls every corner."
+    />
+    <meta name="theme-color" content="#dde0df" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23dde0df'/><path d='M16 27V16a6.5 6.5 0 0 1 6.5-6.5H26' fill='none' stroke='%23171a1a' stroke-width='3.6' stroke-linecap='round' stroke-linejoin='round'/><circle cx='16' cy='27' r='3' fill='%23b52f26'/></svg>"
+    />
+  </head>
+  <body>
+    <main class="spread" id="spread">
+      <section class="book" aria-label="Co-driver road book">
+        <header class="book__head">
+          <p class="book__stage"><span class="tab-chip" id="stage-chip"></span><span id="stage-name">No stage open</span></p>
+          <p class="book__reading">
+            <span class="book__reading-value" id="distance">0.00</span><span class="book__reading-unit">km</span>
+          </p>
+          <p class="book__best" id="best"></p>
+          <div class="damage" id="damage" role="img" aria-label="Car undamaged"></div>
+        </header>
+
+        <div class="book__body">
+          <ol class="notes" id="notes" aria-label="Corners ahead"></ol>
+
+          <div class="dividers" id="dividers">
+            <p class="dividers__ask">Open the book at a stage.</p>
+            <div class="dividers__tabs">
+              <button class="tab tab--road" type="button" data-stage="road">
+                <span class="tab__name">Road</span>
+                <span class="tab__gloss">Traffic, two ways, good tarmac</span>
+              </button>
+              <button class="tab tab--track" type="button" data-stage="track">
+                <span class="tab__name">Track</span>
+                <span class="tab__gloss">Closed circuit, kerbs, no traffic</span>
+              </button>
+              <button class="tab tab--rally" type="button" data-stage="rally">
+                <span class="tab__name">Rally</span>
+                <span class="tab__gloss">Loose surface, narrow, staked edges</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <footer class="book__foot">
+          <p class="book__hint" id="hint"></p>
+          <p class="book__legend" id="legend">
+            <span><b>1</b> tightest</span><span class="legend__rule"></span><span><b>6</b> flat</span>
+          </p>
+        </footer>
+      </section>
+
+      <div class="plate">
+        <canvas id="plate" aria-hidden="true"></canvas>
+        <p class="plate__call" id="call" aria-live="polite"></p>
+      </div>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

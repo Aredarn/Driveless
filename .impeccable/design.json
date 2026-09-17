@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-17T11:23:36Z",
+  "title": "Design System: Driveless",
+  "extensions": {
+    "colorMeta": {
+      "signal-red": {
+        "role": "primary",
+        "displayName": "Signal Red",
+        "canonical": "#b52f26",
+        "tonalRamp": ["#3a0f0c", "#5a1712", "#7c2018", "#9c281f", "#b52f26", "#c9382d", "#dd6a5f", "#f0b2ab"]
+      },
+      "road-tab": {
+        "role": "secondary",
+        "displayName": "Road Tab",
+        "canonical": "#2a567f",
+        "tonalRamp": ["#0d1c29", "#15304a", "#1d4363", "#255172", "#2a567f", "#3d6e99", "#7a9cbb", "#bcd0e0"]
+      },
+      "track-tab": {
+        "role": "secondary",
+        "displayName": "Track Tab",
+        "canonical": "#215941",
+        "tonalRamp": ["#0a1e17", "#123527", "#194835", "#1d5039", "#215941", "#357059", "#71a48d", "#b7d3c4"]
+      },
+      "rally-tab": {
+        "role": "secondary",
+        "displayName": "Rally Tab",
+        "canonical": "#8d5417",
+        "tonalRamp": ["#2e1b08", "#4a2b0c", "#673c10", "#7c4913", "#8d5417", "#a66a27", "#c99a5f", "#e6c9a0"]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#171a1a",
+        "tonalRamp": ["#000000", "#0e1010", "#171a1a", "#2b2f2f", "#464a4a", "#5b6060", "#a9afaf", "#dde0df"]
+      },
+      "stock": {
+        "role": "neutral",
+        "displayName": "Stock",
+        "canonical": "#dde0df",
+        "tonalRamp": ["#3a3d3c", "#767c7a", "#a9afaf", "#ced3d3", "#dde0df", "#e7eae9", "#f1f3f2", "#faf9f8"]
+      },
+      "plate-ground": {
+        "role": "neutral",
+        "displayName": "Plate Ground",
+        "canonical": "#bfc4c3",
+        "tonalRamp": ["#2c2f2e", "#484c4b", "#666a69", "#8c908f", "#bfc4c3", "#d4d8d7", "#e7eae9", "#f5f6f5"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Distance Readout", "purpose": "The book's single largest mark: total distance travelled, at the column head. Never used twice on one screen." },
+      "headline": { "displayName": "Corner Code", "purpose": "Direction + severity numeral on each book row and on the plate's chainage ruler." },
+      "title": { "displayName": "Stage Name", "purpose": "The stage-tab name on the divider screen only." },
+      "body": { "displayName": "Live Call", "purpose": "The overlaid call on the plate as the car approaches the next corner." },
+      "label": { "displayName": "Notation Label", "purpose": "Uppercase small text: stage name, cautions, legend, hints. The system's only uppercase register." }
+    },
+    "shadows": [
+      { "name": "chip-ink-ring", "value": "inset 0 0 0 1px rgb(26 27 24 / 0.45)", "purpose": "Printed-ink edge on the stage-tint chip; not an elevation cue." },
+      { "name": "car-ground-shadow", "value": "canvas: shadowColor rgba(23,26,26,0.34), shadowBlur 0.9, shadowOffsetY ~0.35*ppm*0.12", "purpose": "The one structural shadow in the system: grounds the car mark against the flat plate. Not extended to traffic or UI." }
+    ],
+    "motion": [
+      { "name": "write", "value": "420ms cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "The system's one easing: tab hover/focus shift, damage-mark strike, tulip stroke-draw-in." },
+      { "name": "scratch", "value": "260ms cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Short text-arrival animation for a newly-written book row's code and distance figure." }
+    ],
+    "breakpoints": [
+      { "name": "portrait", "value": "max-aspect-ratio: 19/20" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Stage Tab",
+      "kind": "button",
+      "refersTo": "tab-stage-select",
+      "description": "One of three stage-divider buttons (Road/Track/Rally) shown before a run starts.",
+      "html": "<button class=\"ds-tab\"><span class=\"ds-tab__name\">Road</span><span class=\"ds-tab__gloss\">Traffic, two ways, good tarmac</span></button>",
+      "css": ".ds-tab { display: grid; gap: 2px; text-align: left; padding: 0.75rem 1rem; font-family: 'Archivo Narrow', ui-sans-serif, system-ui, sans-serif; color: #dde0df; background: #2a567f; border: 0; cursor: pointer; clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%); transition: transform 420ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-tab:hover, .ds-tab:focus-visible { transform: translateX(6px); } .ds-tab:focus-visible { outline: 2px solid #171a1a; outline-offset: 2px; } .ds-tab__name { font-size: 1.5rem; font-weight: 700; letter-spacing: 0.02em; } .ds-tab__gloss { font-size: 0.8125rem; font-weight: 400; letter-spacing: 0.02em; color: #e8eae9; }"
+    },
+    {
+      "name": "Book Note Row",
+      "kind": "custom",
+      "refersTo": "note-row",
+      "description": "One corner in the road book's list: tulip diagram, corner code with red severity numeral, distance-to-corner.",
+      "html": "<li class=\"ds-note\"><svg class=\"ds-note__tulip\" viewBox=\"0 0 100 124\" aria-hidden=\"true\"><path d=\"M50,114 L50,66 A21,21 0 0,1 65,50 L80,35\" fill=\"none\" stroke=\"#171a1a\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"50\" cy=\"114\" r=\"7\" fill=\"#171a1a\"/></svg><p class=\"ds-note__code\">R<b>3</b></p><p class=\"ds-note__run\">240 m</p></li>",
+      "css": ".ds-note { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 1.75rem; border-bottom: 1px solid #a9afaf; padding: 1rem 0; font-family: 'Archivo Narrow', ui-sans-serif, system-ui, sans-serif; } .ds-note__tulip { width: clamp(54px, 6.2vw, 78px); height: auto; } .ds-note__code { font-weight: 700; font-size: clamp(1.75rem, 3.4vw, 2.5rem); line-height: 1; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; margin: 0; } .ds-note__code b { color: #b52f26; font-weight: 700; } .ds-note__run { font-weight: 600; font-size: 1.125rem; font-variant-numeric: tabular-nums; color: #464a4a; text-align: right; margin: 0; }"
+    },
+    {
+      "name": "Damage Marks",
+      "kind": "custom",
+      "refersTo": "damage-mark",
+      "description": "A row of chinagraph-slash tally marks; each fills in red as a hit is taken.",
+      "html": "<div class=\"ds-damage\" role=\"img\" aria-label=\"2 of 5 hits taken\"><span class=\"ds-damage__mark ds-damage__mark--struck\"></span><span class=\"ds-damage__mark ds-damage__mark--struck\"></span><span class=\"ds-damage__mark\"></span><span class=\"ds-damage__mark\"></span><span class=\"ds-damage__mark\"></span></div>",
+      "css": ".ds-damage { display: flex; gap: 7px; height: 22px; } .ds-damage__mark { width: 20px; height: 22px; background: #b52f26; clip-path: polygon(74% 0, 100% 0, 26% 100%, 0 100%); opacity: 0; transform: scaleY(0.4); } .ds-damage__mark--struck { opacity: 0.92; transform: scaleY(1) rotate(-3deg); transition: opacity 120ms linear, transform 420ms cubic-bezier(0.16, 1, 0.3, 1); }"
+    },
+    {
+      "name": "Distance Readout",
+      "kind": "custom",
+      "refersTo": "distance-readout",
+      "description": "The book's head figure: total distance travelled this run, in kilometres, tabular.",
+      "html": "<p class=\"ds-reading\"><span class=\"ds-reading__value\">1.42</span><span class=\"ds-reading__unit\">km</span></p>",
+      "css": ".ds-reading { display: flex; align-items: baseline; gap: 0.25ch; margin: 0; font-family: 'Archivo Narrow', ui-sans-serif, system-ui, sans-serif; font-weight: 700; font-size: clamp(3.25rem, 7.5vw, 5rem); line-height: 0.9; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: #171a1a; } .ds-reading__unit { font-size: 0.24em; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #464a4a; }"
+    },
+    {
+      "name": "Stage Chip",
+      "kind": "chip",
+      "refersTo": "tab-stage-select",
+      "description": "The small tinted square marking which stage's book is open, set inline before the stage name.",
+      "html": "<span class=\"ds-chip\" style=\"--ds-chip-tint:#2a567f\"></span>",
+      "css": ".ds-chip { width: 14px; height: 14px; display: inline-block; background: var(--ds-chip-tint, #171a1a); box-shadow: inset 0 0 0 1px rgb(26 27 24 / 0.45); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Rally Road Book",
+    "overview": "Driveless is a co-driver's road book bound next to a printed driving plate, not a HUD floating over a game world. The book is chinagraph on waterproof stock: near-black ink, cool stock white, ruled form lines, a spiral binding drawn as punched holes and ink rings down the reading edge. The plate is the same page seen as the terrain itself — crop marks at its corners, a chainage ruler down its right edge, hatched fields and contour strokes screened the way a printed stage map would carry them. Both surfaces share one paper tooth (a generated grain), one ink, and one hand. The world refuses the arcade shell entirely: no cabinet chrome, no sprite grammar, no CRT scan, no glow. Numerals are tabular and measured. The only warm mark in an otherwise cool, near-monochrome system is signal red, spent on severity, damage, the car, and the chainage's own corner ticks — never spent decoratively. Nothing else competes for that register.",
+    "keyCharacteristics": [
+      "Chinagraph-on-stock palette: near-black ink, cool grey-green stock, one signal red.",
+      "Self-hosted Archivo Narrow at three weights, tabular numerals used throughout for anything that counts.",
+      "No border-radius, no box-shadow-driven elevation; form comes from clip-path dog-ears, drawn spiral binding, and ruled hairlines.",
+      "Two independently generated paper-grain textures (SVG turbulence on the book, canvas noise on the plate) standing in for one shared stock.",
+      "Three stage tints (road/track/rally) carried as tab-card colour, stage chip, and reading accent."
+    ],
+    "rules": [
+      { "name": "The One Warm Mark Rule", "body": "Signal red is the only hue in the system carrying no other role than itself: severity, damage, the car, and the chainage's corner ticks. It never appears as decoration, a hover state, or a stage tint.", "section": "colors" },
+      { "name": "The Two Stocks Rule", "body": "The book (DOM) and the plate (canvas) are one page seen twice. Both must carry the same paper grain, the same ink, and the same stock white — but they are drawn by two independent renderers and are not literally the same asset. Keep them visually in register; do not unify them into a single texture without re-verifying both surfaces.", "section": "colors" },
+      { "name": "The Tabular Rule", "body": "Any numeral that represents a live count — distance, severity, metres-to-corner, personal best, chainage — is set with font-variant-numeric: tabular-nums.", "section": "typography" },
+      { "name": "The Flat Page Rule", "body": "Nothing on the page lifts, glows, or casts a shadow to indicate interactivity. The only shadow in the system grounds the car against the ground plane; hover and focus states move or change colour, they never elevate.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep signal red (#b52f26) reserved for severity, damage, the car, and chainage corner marks; treat any new red use as a system violation until confirmed.",
+      "Do set every counting numeral (distance, severity, metres, chainage) in tabular figures.",
+      "Do cut corners with clip-path (dog-ear, slash) rather than rounding them; reserve the one soft radius (roundRect) for physical objects drawn on the canvas road, not for UI chrome.",
+      "Do carry the paper grain on any new full-bleed surface so it reads as the same stock as the book and plate."
+    ],
+    "donts": [
+      "Don't add box-shadow-driven elevation, glow, or lift as a hover/active affordance; the system's only shadow grounds the car against the ground plane.",
+      "Don't introduce a second accent hue. The palette is ink, stock, three muted stage tints, and one warm red; a new colour dilutes the \"one signal\" rule the whole book depends on.",
+      "Don't reconcile the stage-tint drift (src/game/stages.ts vs. src/styles.css) by picking a value here — that is an implementation fix, not a documentation one; it is recorded above as an open discrepancy."
+    ]
+  }
+}

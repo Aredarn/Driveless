@@ -1,0 +1,590 @@
+@import '@fontsource/archivo-narrow/latin-400.css';
+@import '@fontsource/archivo-narrow/latin-600.css';
+@import '@fontsource/archivo-narrow/latin-700.css';
+
+/* The road book: chinagraph on waterproof stock. Ink, stock, one signal red,
+   three tab-card colours. Nothing glows. */
+:root {
+  --ink: #171a1a;
+  --ink-soft: #464a4a;
+  --ink-faint: #5b6060;
+  --rule: #a9afaf;
+  --stock: #dde0df;
+  --stock-shade: #ced3d3;
+  --red: #b52f26;
+  --red-bright: #c9382d;
+  --road: #2a567f;
+  --track: #215941;
+  --rally: #8d5417;
+  --stage: var(--ink);
+
+  --step: 0.5rem;
+  --font: 'Archivo Narrow', ui-sans-serif, system-ui, sans-serif;
+  --write: 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body {
+  background: var(--stock);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.35;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: var(--red);
+  color: var(--stock);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.spread {
+  display: grid;
+  grid-template-columns: clamp(252px, 30vw, 440px) 1fr;
+  height: 100dvh;
+  width: 100%;
+}
+
+/* ---- the book ------------------------------------------------------ */
+
+.book {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  background-color: var(--stock);
+  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='t'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='140' height='140' filter='url(%23t)' opacity='0.055'/></svg>");
+  padding: calc(var(--step) * 3) calc(var(--step) * 4) calc(var(--step) * 2.5) calc(var(--step) * 3);
+  min-height: 0;
+  z-index: 2;
+}
+
+/* Spiral binding down the inner edge: punched holes and ink rings, drawn
+   rather than bordered. */
+.book::after {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  width: 15px;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0 9px,
+      var(--ink) 9px 11px,
+      transparent 11px 30px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0 5px,
+      var(--stock-shade) 5px 15px,
+      transparent 15px 30px
+    ),
+    linear-gradient(to right, var(--stock-shade), var(--stock));
+  background-size: 7px 30px, 15px 30px, 100% 100%;
+  background-position: 4px 6px, 0 6px, 0 0;
+  background-repeat: repeat-y, repeat-y, no-repeat;
+}
+
+.book__head {
+  display: grid;
+  gap: calc(var(--step) * 0.5);
+  padding-inline-end: 12px;
+}
+
+.book__stage {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--step) * 1.25);
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.tab-chip {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  background: var(--stage);
+  box-sizing: border-box;
+  box-shadow: inset 0 0 0 1px rgb(26 27 24 / 0.45);
+}
+
+.book__reading {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25ch;
+  margin: calc(var(--step) * 0.5) 0 0;
+  font-weight: 700;
+  font-size: clamp(3.25rem, 7.5vw, 5rem);
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.book__reading-unit {
+  font-size: 0.24em;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.book__best {
+  margin: 0;
+  min-height: 1.2em;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.damage {
+  display: flex;
+  gap: 7px;
+  height: 22px;
+  margin-top: calc(var(--step) * 1.5);
+}
+
+.damage__mark {
+  width: 20px;
+  height: 22px;
+  background: var(--red);
+  clip-path: polygon(74% 0, 100% 0, 26% 100%, 0 100%);
+  opacity: 0;
+  transform: scaleY(0.4);
+  transform-origin: 50% 50%;
+}
+
+.damage__mark--struck {
+  opacity: 0.92;
+  transform: scaleY(1) rotate(-3deg);
+  transition:
+    opacity 120ms linear,
+    transform var(--write);
+}
+
+.book__body {
+  position: relative;
+  min-height: 0;
+  margin-top: calc(var(--step) * 2.5);
+  padding-inline-end: 12px;
+}
+
+/* Ruled form lines behind the notes, as on the printed page. */
+.notes {
+  display: grid;
+  grid-auto-rows: auto;
+  align-content: start;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--rule);
+}
+
+.note {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: calc(var(--step) * 1.75);
+  border-bottom: 1px solid var(--rule);
+  padding: calc(var(--step) * 2) 0;
+  min-height: 0;
+}
+
+.note--written .note__tulip path,
+.note--written .note__tulip line {
+  animation: write var(--write) both;
+}
+
+.note--written .note__code,
+.note--written .note__run {
+  animation: scratch 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes write {
+  from {
+    stroke-dashoffset: var(--len, 120);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes scratch {
+  from {
+    opacity: 0.25;
+    transform: translateX(-0.18em);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.note__tulip {
+  display: block;
+  width: clamp(54px, 6.2vw, 78px);
+  height: auto;
+  overflow: visible;
+}
+
+.note__code {
+  font-weight: 700;
+  font-size: clamp(1.75rem, 3.4vw, 2.5rem);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.note__code b {
+  color: var(--red);
+  font-weight: 700;
+}
+
+.note__caution {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.note__run {
+  font-weight: 600;
+  font-size: 1.125rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+  text-align: right;
+}
+
+.note--next .note__run {
+  color: var(--ink);
+}
+
+/* ---- tab dividers -------------------------------------------------- */
+
+.dividers {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: center;
+  gap: calc(var(--step) * 2);
+  background-color: var(--stock);
+  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='t'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='140' height='140' filter='url(%23t)' opacity='0.055'/></svg>");
+  padding-block: calc(var(--step) * 2);
+}
+
+.dividers[hidden] {
+  display: none;
+}
+
+.dividers__ask {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.dividers__tabs {
+  display: grid;
+  gap: calc(var(--step) * 1.5);
+}
+
+.tab {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  padding: calc(var(--step) * 1.5) calc(var(--step) * 2);
+  font-family: inherit;
+  color: var(--stock);
+  background: var(--tab, var(--ink));
+  border: 0;
+  cursor: pointer;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+  transition: transform var(--write);
+}
+
+.tab:hover,
+.tab:focus-visible {
+  transform: translateX(6px);
+}
+
+.tab:focus-visible {
+  outline-offset: 2px;
+}
+
+.tab--road {
+  --tab: var(--road);
+}
+.tab--track {
+  --tab: var(--track);
+}
+.tab--rally {
+  --tab: var(--rally);
+}
+
+.tab__name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.tab__gloss {
+  font-size: 0.8125rem;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: #e8eae9;
+}
+
+/* ---- foot ---------------------------------------------------------- */
+
+.book__foot {
+  display: grid;
+  gap: calc(var(--step) * 0.75);
+  padding-block-start: calc(var(--step) * 2);
+  padding-inline-end: 12px;
+}
+
+.book__hint {
+  margin: 0;
+  min-height: 1.3em;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.book__hint b {
+  color: var(--red);
+}
+
+.book__legend {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--step) * 1.25);
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.book__legend b {
+  color: var(--red);
+  font-weight: 700;
+}
+
+.legend__rule {
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+/* ---- the plate ----------------------------------------------------- */
+
+.plate {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  background: #bfc4c3;
+}
+
+#plate {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.plate__call {
+  position: absolute;
+  inset-block-start: calc(var(--step) * 3);
+  inset-inline-start: calc(var(--step) * 3.5);
+  margin: 0;
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  text-align: left;
+  pointer-events: none;
+}
+
+.plate__call b {
+  color: var(--red);
+}
+
+.plate__call span {
+  display: block;
+  font-size: 0.42em;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+/* ---- portrait: the book turns sideways ----------------------------- */
+
+@media (max-aspect-ratio: 19/20) {
+  .spread {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
+  .book {
+    grid-template-rows: auto auto;
+    padding: calc(var(--step) * 2) calc(var(--step) * 2.5) calc(var(--step) * 1.5);
+    padding-block-start: max(calc(var(--step) * 2), env(safe-area-inset-top));
+  }
+
+  .book::after {
+    inset: auto 0 0 0;
+    width: auto;
+    height: 13px;
+    background:
+      repeating-linear-gradient(to right, transparent 0 9px, var(--ink) 9px 11px, transparent 11px 30px),
+      repeating-linear-gradient(to right, transparent 0 5px, var(--stock-shade) 5px 15px, transparent 15px 30px),
+      linear-gradient(to bottom, var(--stock-shade), var(--stock));
+    background-size: 30px 7px, 30px 13px, 100% 100%;
+    background-position: 6px 3px, 6px 0, 0 0;
+    background-repeat: repeat-x, repeat-x, no-repeat;
+  }
+
+  .book__head {
+    grid-template-columns: 1fr auto;
+    grid-template-areas: 'stage reading' 'damage reading' 'best reading';
+    align-items: center;
+    padding-inline-end: 0;
+    gap: 0 calc(var(--step) * 2);
+  }
+
+  .book__stage {
+    grid-area: stage;
+  }
+  .book__reading {
+    grid-area: reading;
+    font-size: clamp(2.75rem, 13vw, 4rem);
+    justify-self: end;
+  }
+  .book__best {
+    grid-area: best;
+  }
+  .damage {
+    grid-area: damage;
+    margin-top: calc(var(--step) * 0.75);
+  }
+
+  .book__body {
+    margin-top: calc(var(--step) * 1.5);
+    padding-inline-end: 0;
+    padding-block-end: calc(var(--step) * 1.5);
+  }
+
+  .notes {
+    grid-auto-rows: auto;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    border-top: 0;
+    border-inline-start: 1px solid var(--rule);
+  }
+
+  .note__tulip {
+    width: clamp(46px, 14vw, 64px);
+  }
+
+  .note {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    justify-items: center;
+    gap: calc(var(--step) * 0.25);
+    padding: 0 calc(var(--step) * 1.25);
+    border-bottom: 0;
+    border-inline-end: 1px solid var(--rule);
+  }
+
+  .note__run {
+    text-align: center;
+  }
+
+  .note__caution {
+    text-align: center;
+  }
+
+  .dividers {
+    position: static;
+    padding-block: calc(var(--step) * 1.5) 0;
+  }
+
+  .dividers__tabs {
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+  }
+
+  .tab {
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 12px), 0 100%);
+    padding: calc(var(--step) * 1.25) calc(var(--step) * 1.5) calc(var(--step) * 2.5);
+  }
+
+  .tab:hover,
+  .tab:focus-visible {
+    transform: translateY(-5px);
+  }
+
+  .tab__name {
+    font-size: 1.25rem;
+  }
+
+  .tab__gloss {
+    display: none;
+  }
+
+  .book__foot {
+    display: none;
+  }
+
+  .plate__call {
+    inset-block-start: calc(var(--step) * 2);
+    inset-inline-start: calc(var(--step) * 2.5);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .note--written .note__tulip path,
+  .note--written .note__tulip line,
+  .note--written .note__code,
+  .note--written .note__run {
+    animation: none;
+  }
+
+  .damage__mark--struck {
+    transition: none;
+  }
+
+  .tab {
+    transition: none;
+  }
+}
