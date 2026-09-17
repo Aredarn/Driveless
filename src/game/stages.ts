@@ -11,7 +11,9 @@ export interface Stage {
   id: StageId;
   name: string;
   gloss: string;
-  /** Tab card colour. */
+  /** Tab card colour, as the custom property that carries it. The
+   *  stylesheet is the single source of the value; stage data only names
+   *  which role this stage takes. */
   tint: string;
   /** OPEN: coefficient of friction the surface offers. The numeric grip
    *  model separating the stages has not been decided. */
@@ -33,7 +35,7 @@ export const STAGES: Record<StageId, Stage> = {
     id: 'road',
     name: 'Road',
     gloss: 'Traffic, two ways, good tarmac',
-    tint: '#2f5f8f',
+    tint: 'var(--road)',
     mu: 1.02,
     topSpeed: 54,
     halfWidth: 4.4,
@@ -46,7 +48,7 @@ export const STAGES: Record<StageId, Stage> = {
     id: 'track',
     name: 'Track',
     gloss: 'Closed circuit, kerbs, no traffic',
-    tint: '#26654a',
+    tint: 'var(--track)',
     mu: 1.28,
     topSpeed: 60,
     halfWidth: 5.6,
@@ -59,7 +61,7 @@ export const STAGES: Record<StageId, Stage> = {
     id: 'rally',
     name: 'Rally',
     gloss: 'Loose surface, narrow, staked edges',
-    tint: '#a2611c',
+    tint: 'var(--rally)',
     mu: 0.74,
     topSpeed: 45,
     halfWidth: 3.1,
