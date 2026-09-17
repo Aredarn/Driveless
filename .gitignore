@@ -1,0 +1,5 @@
+# Impeccable: platform engine binary, fetched by the skill launcher on first run
+**/skills/impeccable/scripts/bin/
+
+# Claude Code local settings (machine-specific hook wiring)
+.claude/settings.local.json
